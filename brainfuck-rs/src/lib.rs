@@ -27,9 +27,8 @@ impl BrainFuck {
         let mut i = 0;
         while i < program.len() {
             let c = chars[i];
-
             if self.is_looping {
-                if c == ']' {
+                if c == '[' {
                     self.inner_loops += 1
                 }
 

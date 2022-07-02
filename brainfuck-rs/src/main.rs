@@ -9,15 +9,14 @@ fn main() {
     let program = match args.len() {
         2 => args[1].to_owned(),
         3 => {
-            if args[1] == "-f" {
-            } else {
+            if args[1] != "-f" {
                 panic!("Expected file path '-f'");
             }
 
             fs::read_to_string(args[2].clone()).unwrap()
         }
         _ => {
-            println!("Usage: brainfuck-rs (<program> | [-f] <path>)");
+            println!("usage: brainfuck-rs (<program> | [-f] <path>)");
             exit(2);
         }
     };
