@@ -54,7 +54,7 @@ back_to_enum!(
         Input,
 
         /// Jump to the defined place if stack value is zero.
-        JumpIfZero,
+        JumpIfFalse,
 
         /// Jump to the defined place (usually before this instruction).
         Loop,

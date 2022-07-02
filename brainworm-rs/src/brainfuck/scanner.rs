@@ -85,7 +85,7 @@ mod tests {
 
     #[test]
     fn should_scan() {
-        let mut scanner = Scanner::new(",[->+<]");
+        let mut scanner = Scanner::new(",[->+<].");
         let mut tokens = vec![];
 
         loop {
@@ -108,6 +108,7 @@ mod tests {
                 Token::new(TokenKind::Plus, 1),
                 Token::new(TokenKind::LeftAngle, 1),
                 Token::new(TokenKind::RightBracket, 1),
+                Token::new(TokenKind::Dot, 1),
                 Token::new(TokenKind::EOF, 1),
             ]
         );

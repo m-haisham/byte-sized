@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug)]
 pub struct Chunk {
     pub code: Vec<u8>,
@@ -5,7 +7,7 @@ pub struct Chunk {
     pub constants: Vec<Value>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Int(u32),
 }
@@ -27,5 +29,21 @@ impl Chunk {
     pub fn add_constant(&mut self, value: Value) -> usize {
         self.constants.push(value);
         return self.constants.len() - 1;
+    }
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::Int(value) => write!(f, "{value}"),
+        }
+    }
+}
+
+impl Value {
+    pub fn truthy(&self) -> bool {
+        match self {
+            Value::Int(value) => *value != 0,
+        }
     }
 }

@@ -67,16 +67,17 @@ impl<'a> Parser<'a> {
         let loop_start = self.current_chunk().code.len();
 
         self.emit_byte(OpCode::PointerValue as u8);
-        let repeat_jump = self.emit_jump(OpCode::JumpIfZero);
+        let repeat_jump = self.emit_jump(OpCode::JumpIfFalse);
         self.emit_byte(OpCode::Pop as u8);
 
         self.advance();
-        while !self.matches(TokenKind::RightBracket) {
+        while !self.check(TokenKind::RightBracket) {
             self.expression();
         }
 
         self.emit_loop(loop_start);
         self.patch_jump(repeat_jump);
+        self.emit_byte(OpCode::Pop as u8);
     }
 
     fn advance(&mut self) {
@@ -220,7 +221,7 @@ mod tests {
 
     #[test]
     fn should_parse_brainfuck() {
-        let scanner = Scanner::new(",[->+<]");
+        let scanner = Scanner::new(",[->+<].");
         let mut chunk = Chunk::new();
 
         let mut parser = Parser::new(scanner, &mut chunk);
@@ -231,14 +232,23 @@ mod tests {
             vec![
                 OpCode::Constant as u8,
                 OpCode::DefineTape as u8,
+                0,
                 OpCode::Input as u8,
-                OpCode::JumpIfZero as u8,
+                OpCode::PointerValue as u8,
+                OpCode::JumpIfFalse as u8,
+                0,
+                8,
                 OpCode::Pop as u8,
                 OpCode::DecrementSingular as u8,
                 OpCode::MovePointerRight as u8,
                 OpCode::IncrementSingular as u8,
                 OpCode::MovePointerLeft as u8,
                 OpCode::Loop as u8,
+                0,
+                12,
+                OpCode::Pop as u8,
+                OpCode::PointerValue as u8,
+                OpCode::Print as u8,
                 OpCode::PointerValue as u8,
                 OpCode::Return as u8,
             ],

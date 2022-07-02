@@ -1,6 +1,7 @@
 use crate::{chunk::Chunk, opcode::OpCode};
 
-pub const DEBUG_PRINT_CODE: bool = true;
+pub const DEBUG_PRINT_CODE: bool = false;
+pub const DEBUG_TRACE_EXECUTION: bool = false;
 
 pub fn disassemble_chunk(chunk: &Chunk, name: &str) {
     println!("== {name} ==");
@@ -38,7 +39,7 @@ pub fn disassemble_instruction(chunk: &Chunk, offset: usize) -> usize {
         OpCode::Constant => constant_instruction("OP_CONSTANT", chunk, offset),
         OpCode::Pop => simple_instruction("OP_POP", offset),
         OpCode::Print => simple_instruction("OP_PRINT", offset),
-        OpCode::JumpIfZero => jump_instruction("OP_JUMP_IF_FALSE", 1, chunk, offset),
+        OpCode::JumpIfFalse => jump_instruction("OP_JUMP_IF_FALSE", 1, chunk, offset),
         OpCode::Loop => jump_instruction("OP_LOOP", -1, chunk, offset),
         OpCode::Return => simple_instruction("OP_RETURN", offset),
     }
