@@ -1,6 +1,5 @@
 use brainfuck::{parser::Parser, scanner::Scanner};
 use chunk::Chunk;
-use opcode::OpCode;
 
 mod brainfuck;
 mod chunk;

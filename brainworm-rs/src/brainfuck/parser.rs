@@ -12,7 +12,7 @@ use super::{
 };
 
 pub struct Parser<'a> {
-    scanner: Scanner<'a>,
+    scanner: Scanner,
     chunk: &'a mut Chunk,
 
     previous: Token,
@@ -22,7 +22,7 @@ pub struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(scanner: Scanner<'a>, chunk: &'a mut Chunk) -> Self {
+    pub fn new(scanner: Scanner, chunk: &'a mut Chunk) -> Self {
         Self {
             scanner,
             chunk,
@@ -107,15 +107,6 @@ impl<'a> Parser<'a> {
         self.current.kind == kind
     }
 
-    fn consume(&mut self, kind: TokenKind, message: &str) {
-        if self.current.kind == kind {
-            self.advance();
-            return;
-        }
-
-        self.error_at_current(message);
-    }
-
     fn error(&mut self, message: &str) {
         self.error_at(self.previous.clone(), message);
     }
@@ -140,10 +131,6 @@ impl<'a> Parser<'a> {
 
         println!(": {message}");
         self.had_error = true;
-    }
-
-    fn synchronise(&mut self) {
-        self.panic_mode = false;
     }
 
     fn emit_byte<T: Into<u8>>(&mut self, byte: T) {

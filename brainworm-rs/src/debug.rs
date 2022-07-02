@@ -58,13 +58,6 @@ fn constant_instruction(name: &str, chunk: &Chunk, offset: usize) -> usize {
     offset + 2
 }
 
-fn byte_instruction(name: &str, chunk: &Chunk, offset: usize) -> usize {
-    let slot = chunk.code[offset + 1];
-    println!("{name:16} {slot:4}");
-
-    offset + 2
-}
-
 fn jump_instruction(name: &str, sign: i32, chunk: &Chunk, offset: usize) -> usize {
     let jump = ((chunk.code[offset + 1] as u16) << 8) | chunk.code[offset + 2] as u16;
     let dest = offset as i32 + 3 + sign * jump as i32;

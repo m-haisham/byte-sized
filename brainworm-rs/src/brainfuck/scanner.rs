@@ -1,17 +1,15 @@
 use super::token::{Token, TokenKind};
 
-pub struct Scanner<'a> {
-    source: &'a str,
+pub struct Scanner {
     chars: Vec<char>,
     start: usize,
     current: usize,
     line: usize,
 }
 
-impl<'a> Scanner<'a> {
-    pub fn new(source: &'a str) -> Self {
+impl Scanner {
+    pub fn new(source: &str) -> Self {
         Self {
-            source,
             chars: source.chars().collect(),
             start: 0,
             current: 0,
@@ -55,27 +53,7 @@ impl<'a> Scanner<'a> {
         self.chars[self.current]
     }
 
-    fn peek_next(&mut self) -> char {
-        if self.current + 1 >= self.chars.len() {
-            '\0'
-        } else {
-            self.chars[self.current + 1]
-        }
-    }
-
-    fn match_current(&mut self, expected: char) -> bool {
-        if self.is_at_end() {
-            false
-        } else if self.chars[self.current] != expected {
-            false
-        } else {
-            self.current += 1;
-            true
-        }
-    }
-
     fn make_token(&self, kind: TokenKind) -> Token {
-        let lexeme = &self.source[self.start..self.current];
         Token::new(kind, self.line)
     }
 
