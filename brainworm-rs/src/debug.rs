@@ -1,6 +1,15 @@
 use crate::{chunk::Chunk, opcode::OpCode};
 
+#[cfg(feature = "debug")]
+pub const DEBUG_PRINT_CODE: bool = true;
+
+#[cfg(not(feature = "debug"))]
 pub const DEBUG_PRINT_CODE: bool = false;
+
+#[cfg(feature = "debug")]
+pub const DEBUG_TRACE_EXECUTION: bool = true;
+
+#[cfg(not(feature = "debug"))]
 pub const DEBUG_TRACE_EXECUTION: bool = false;
 
 pub fn disassemble_chunk(chunk: &Chunk, name: &str) {
