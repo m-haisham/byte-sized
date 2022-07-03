@@ -36,6 +36,7 @@ impl<'a> PrScanner<'a> {
             ']' => self.make_token(PrTokenKind::RightBracket),
             '<' => self.make_token(PrTokenKind::LeftAngle),
             '>' => self.make_token(PrTokenKind::RightAngle),
+            '.' => self.make_token(PrTokenKind::Dot),
             ',' => self.make_token(PrTokenKind::Comma),
             '$' => self.make_token(PrTokenKind::Dollar),
             '@' => self.make_token(PrTokenKind::At),

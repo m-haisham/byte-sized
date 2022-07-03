@@ -51,10 +51,7 @@ impl<'a> Parser<'a> {
             TokenKind::RightAngle => self.emit_byte(OpCode::ShiftRight as u8),
             TokenKind::Plus => self.emit_byte(OpCode::IncrementSingular as u8),
             TokenKind::Minus => self.emit_byte(OpCode::DecrementSingular as u8),
-            TokenKind::Dot => {
-                self.emit_byte(OpCode::PointerValue as u8);
-                self.emit_byte(OpCode::Print as u8);
-            }
+            TokenKind::Dot => self.emit_byte(OpCode::Print as u8),
             TokenKind::Comma => self.emit_byte(OpCode::Input as u8),
             TokenKind::LeftBracket => self.repeat(),
             _ => panic!("Unexpected token"),

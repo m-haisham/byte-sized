@@ -183,19 +183,17 @@ impl VM {
                     }
                 }
                 OpCode::Print => {
-                    print!("{}", self.stack_pop());
+                    print!("{}", ptr_deref!() as char);
                 }
                 OpCode::PrintRange => {
                     let value = self.stack_pop();
-                    let length = if let Value::Int(value) = value {
-                        value
+                    if let Value::Int(value) = value {
+                        let range = &self.tape[self.ptr..self.ptr + value as usize];
+                        let output = range.iter().map(|c| *c as char).collect::<String>();
+                        print!("{output}");
                     } else {
-                        todo!()
-                    };
-
-                    let range = &self.tape[self.ptr..self.ptr + length as usize];
-                    let output = range.iter().map(|c| *c as char).collect::<String>();
-                    print!("{output}");
+                        self.runtime_error("Expect a number.");
+                    }
                 }
                 OpCode::Input => {
                     let mut line = String::new();

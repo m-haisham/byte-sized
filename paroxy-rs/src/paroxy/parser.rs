@@ -47,6 +47,7 @@ impl<'a> PrParser<'a> {
             PrTokenKind::Minus => self.sized_token(OpCode::DecrementSingular, OpCode::Decrement),
             PrTokenKind::LeftAngle => self.sized_token(OpCode::ShiftLeft, OpCode::MoveLeft),
             PrTokenKind::RightAngle => self.sized_token(OpCode::ShiftRight, OpCode::MoveRight),
+            PrTokenKind::Dot => self.sized_token(OpCode::Print, OpCode::PrintRange),
             PrTokenKind::LeftBrace => self.define_tape(),
             PrTokenKind::String => self.string(),
             _ => (),
