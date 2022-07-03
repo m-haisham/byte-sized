@@ -127,43 +127,31 @@ impl VM {
                     self.ptr += 1;
                 }
                 OpCode::Increment => {
-                    let value = self.stack_pop();
-                    if let Value::Int(value) = value {
-                        let available = u8::MAX - ptr_deref!();
-                        if (available as u32) > value {
-                            ptr_deref!() += value as u8;
-                        } else {
-                            self.runtime_error(
-                                format!(
-                                    "Cannot be greater than {} [{}]",
-                                    u8::MAX,
-                                    value + ptr_deref!() as u32
-                                )
-                                .as_str(),
-                            );
-                        }
+                    let value = read_byte!();
+                    let available = u8::MAX - ptr_deref!();
+                    if available > value {
+                        ptr_deref!() += value as u8;
                     } else {
-                        self.runtime_error("Expect a number.");
+                        self.runtime_error(
+                            format!(
+                                "Cannot be greater than {} [{}]",
+                                u8::MAX,
+                                value + ptr_deref!()
+                            )
+                            .as_str(),
+                        );
                     }
                 }
                 OpCode::Decrement => {
-                    let value = self.stack_pop();
-                    if let Value::Int(value) = value {
-                        let available = ptr_deref!() - u8::MIN;
-                        if (available as u32) > value {
-                            ptr_deref!() -= value as u8;
-                        } else {
-                            self.runtime_error(
-                                format!(
-                                    "Cannot be less than {} [{}]",
-                                    u8::MIN,
-                                    value - ptr_deref!() as u32
-                                )
-                                .as_str(),
-                            );
-                        }
+                    let value = read_byte!();
+                    let available = ptr_deref!() - u8::MIN;
+                    if available > value {
+                        ptr_deref!() -= value as u8;
                     } else {
-                        self.runtime_error("Expect a number.");
+                        self.runtime_error(
+                            format!("Cannot be less than {} [{}]", u8::MIN, value - ptr_deref!())
+                                .as_str(),
+                        );
                     }
                 }
                 OpCode::IncrementSingular => {

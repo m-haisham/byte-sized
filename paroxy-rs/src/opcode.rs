@@ -46,10 +46,10 @@ back_to_enum!(
         /// Moves the tape pointer to the right by 1.
         ShiftRight,
 
-        /// Pop from stack and add the value to current cell.
+        /// Add next byte value to current cell.
         Increment,
 
-        /// Pop from stack and remove the value from current cell.
+        /// Remove next byte value from current cell.
         Decrement,
 
         /// Add one to current pointer value.

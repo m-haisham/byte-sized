@@ -43,23 +43,40 @@ impl<'a> PrParser<'a> {
 
     pub fn expression(&mut self) {
         match &self.current.kind {
-            PrTokenKind::Plus => self.sized_token(OpCode::IncrementSingular, OpCode::Increment),
-            PrTokenKind::Minus => self.sized_token(OpCode::DecrementSingular, OpCode::Decrement),
-            PrTokenKind::LeftAngle => self.sized_token(OpCode::ShiftLeft, OpCode::MoveLeft),
-            PrTokenKind::RightAngle => self.sized_token(OpCode::ShiftRight, OpCode::MoveRight),
-            PrTokenKind::Dot => self.sized_token(OpCode::Print, OpCode::PrintRange),
+            PrTokenKind::Plus => self.sized_code(OpCode::IncrementSingular, OpCode::Increment),
+            PrTokenKind::Minus => self.sized_code(OpCode::DecrementSingular, OpCode::Decrement),
+            PrTokenKind::LeftAngle => self.sized_constant(OpCode::ShiftLeft, OpCode::MoveLeft),
+            PrTokenKind::RightAngle => self.sized_constant(OpCode::ShiftRight, OpCode::MoveRight),
+            PrTokenKind::Dot => self.sized_constant(OpCode::Print, OpCode::PrintRange),
             PrTokenKind::LeftBrace => self.define_tape(),
             PrTokenKind::String => self.string(),
             _ => (),
         }
     }
 
-    fn sized_token(&mut self, one: OpCode, many: OpCode) {
+    fn sized_constant(&mut self, one: OpCode, many: OpCode) {
         self.advance();
         if self.matches(PrTokenKind::Integer) {
             let size = self.previous.lexeme.parse::<u32>().unwrap();
             self.emit_constant(Value::Int(size));
             self.emit_byte(many);
+        } else {
+            self.emit_byte(one);
+        }
+    }
+
+    fn sized_code(&mut self, one: OpCode, many: OpCode) {
+        self.advance();
+        if self.matches(PrTokenKind::Integer) {
+            let size = self.previous.lexeme.parse::<usize>().unwrap();
+
+            if size > u8::MAX as usize {
+                self.error_at_current("Expect integer between 0-255.");
+                return;
+            }
+
+            self.emit_byte(many);
+            self.emit_byte(size as u8);
         } else {
             self.emit_byte(one);
         }

@@ -44,8 +44,8 @@ pub fn disassemble_instruction(chunk: &Chunk, offset: usize) -> usize {
         OpCode::MoveRight => simple_instruction("OP_MOVE_RIGHT", offset),
         OpCode::ShiftLeft => simple_instruction("OP_SHIFT_LEFT", offset),
         OpCode::ShiftRight => simple_instruction("OP_SHIFT_RIGHT", offset),
-        OpCode::Increment => simple_instruction("OP_INCREMENT", offset),
-        OpCode::Decrement => simple_instruction("OP_DECREMENT", offset),
+        OpCode::Increment => byte_instruction("OP_INCREMENT", chunk, offset),
+        OpCode::Decrement => byte_instruction("OP_DECREMENT", chunk, offset),
         OpCode::IncrementSingular => simple_instruction("OP_INCREMENT_SINGLE", offset),
         OpCode::DecrementSingular => simple_instruction("OP_DECREMENT_SINGLE", offset),
         OpCode::Input => simple_instruction("OP_INPUT", offset),
@@ -66,10 +66,17 @@ fn simple_instruction(name: &str, offset: usize) -> usize {
     offset + 1
 }
 
+fn byte_instruction(name: &str, chunk: &Chunk, offset: usize) -> usize {
+    let byte = chunk.code[offset + 1];
+    println!("{name:16} {byte:4}",);
+
+    offset + 2
+}
+
 fn constant_instruction(name: &str, chunk: &Chunk, offset: usize) -> usize {
     let constant = chunk.code[offset + 1];
     let value = &chunk.constants[constant as usize];
-    println!("{name:16} {constant:4} {value:?}",);
+    println!("{name:16} {constant:4} {value}",);
 
     offset + 2
 }
