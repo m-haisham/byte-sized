@@ -147,7 +147,6 @@ impl<'a> BfParser<'a> {
     }
 
     fn emit_return(&mut self) {
-        self.emit_byte(OpCode::PointerValue as u8);
         self.emit_byte(OpCode::Return as u8);
     }
 
