@@ -1,5 +1,5 @@
 [package]
-name = "brainworm-rs"
+name = "paroxy-rs"
 version = "0.1.0"
 edition = "2021"
 
@@ -12,3 +12,10 @@ serde = {version = "1.0", features = ["derive", "rc"]}
 
 [features]
 debug = []
+
+[profile.release]
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = 'abort' 
+strip = true
