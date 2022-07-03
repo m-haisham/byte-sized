@@ -1,13 +1,15 @@
 use std::fmt::Display;
 
-#[derive(Debug)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Chunk {
     pub code: Vec<u8>,
     pub lines: Vec<usize>,
     pub constants: Vec<Value>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Value {
     Int(u32),
 }
