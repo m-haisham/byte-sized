@@ -1,13 +1,13 @@
 use super::token::{Token, TokenKind};
 
-pub struct Scanner {
+pub struct BfScanner {
     chars: Vec<char>,
     start: usize,
     current: usize,
     line: usize,
 }
 
-impl Scanner {
+impl BfScanner {
     pub fn new(source: &str) -> Self {
         Self {
             chars: source.chars().collect(),
@@ -85,7 +85,7 @@ mod tests {
 
     #[test]
     fn should_scan() {
-        let mut scanner = Scanner::new(",[->+<].");
+        let mut scanner = BfScanner::new(",[->+<].");
         let mut tokens = vec![];
 
         loop {

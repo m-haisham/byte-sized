@@ -7,12 +7,12 @@ use crate::{
 };
 
 use super::{
-    scanner::Scanner,
+    scanner::BfScanner,
     token::{Token, TokenKind},
 };
 
-pub struct Parser<'a> {
-    scanner: Scanner,
+pub struct BfParser<'a> {
+    scanner: BfScanner,
     chunk: &'a mut Chunk,
 
     previous: Token,
@@ -21,8 +21,8 @@ pub struct Parser<'a> {
     panic_mode: bool,
 }
 
-impl<'a> Parser<'a> {
-    pub fn new(scanner: Scanner, chunk: &'a mut Chunk) -> Self {
+impl<'a> BfParser<'a> {
+    pub fn new(scanner: BfScanner, chunk: &'a mut Chunk) -> Self {
         Self {
             scanner,
             chunk,
@@ -218,10 +218,10 @@ mod tests {
 
     #[test]
     fn should_parse_brainfuck() {
-        let scanner = Scanner::new(",[->+<].");
+        let scanner = BfScanner::new(",[->+<].");
         let mut chunk = Chunk::new();
 
-        let mut parser = Parser::new(scanner, &mut chunk);
+        let mut parser = BfParser::new(scanner, &mut chunk);
         parser.compile();
 
         assert_eq!(
