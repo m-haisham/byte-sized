@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PrToken {
     pub kind: PrTokenKind,
     pub lexeme: String,
@@ -6,7 +6,7 @@ pub struct PrToken {
 }
 
 #[repr(u8)]
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PrTokenKind {
     // Single character tokens.
     LeftBrace,
@@ -28,6 +28,7 @@ pub enum PrTokenKind {
     Integer,
     String,
 
+    // Misc.
     Error,
     EOF,
 }

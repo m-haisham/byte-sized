@@ -46,8 +46,15 @@ back_to_enum!(
         /// Remove one from current pointer value/
         DecrementSingular,
 
+        /// Write the string starting from current position
+        /// to the tape.
+        WriteString,
+
         /// Output the current pointer value.
         Print,
+
+        /// Output the range from the tape.
+        PrintRange,
 
         /// Take input from input provider and
         /// set it to the current pointer cell.

@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, rc::Rc};
 
 use serde::{Deserialize, Serialize};
 
@@ -12,6 +12,7 @@ pub struct Chunk {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Value {
     Int(u32),
+    String(Rc<str>),
 }
 
 impl Chunk {
@@ -38,6 +39,7 @@ impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Value::Int(value) => write!(f, "{value}"),
+            Value::String(value) => write!(f, "{value}"),
         }
     }
 }
@@ -46,6 +48,7 @@ impl Value {
     pub fn truthy(&self) -> bool {
         match self {
             Value::Int(value) => *value != 0,
+            Value::String(value) => true,
         }
     }
 }

@@ -104,8 +104,30 @@ impl VM {
                 OpCode::DecrementSingular => {
                     ptr_deref!() -= 1;
                 }
+                OpCode::WriteString => {
+                    let value = self.stack_pop();
+                    if let Value::String(value) = value {
+                        for (i, c) in value.chars().enumerate() {
+                            self.tape[self.ptr + i] = c as u8;
+                        }
+                    } else {
+                        self.runtime_error("Expect a string value.");
+                    }
+                }
                 OpCode::Print => {
-                    println!("{}", self.stack_pop());
+                    print!("{}", self.stack_pop());
+                }
+                OpCode::PrintRange => {
+                    let value = self.stack_pop();
+                    let length = if let Value::Int(value) = value {
+                        value
+                    } else {
+                        todo!()
+                    };
+
+                    let range = &self.tape[self.ptr..self.ptr + length as usize];
+                    let output = range.iter().map(|c| *c as char).collect::<String>();
+                    print!("{output}");
                 }
                 OpCode::Input => {
                     let mut line = String::new();
