@@ -9,6 +9,7 @@ mod chunk;
 mod opcode;
 
 mod debug;
+mod paroxy;
 mod vm;
 
 fn main() {
