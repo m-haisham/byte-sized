@@ -34,11 +34,17 @@ back_to_enum!(
         /// Adds the constant in the defined position to the stack.
         Constant,
 
-        /// Moves the tape pointer to the left.
-        MovePointerLeft,
+        /// Moves the tape pointer to the left by the specified number.
+        MoveLeft,
 
-        /// Moves the tape pointer to the right.
-        MovePointerRight,
+        /// Moves the tape pointer to the right by the specified number.
+        MoveRight,
+
+        /// Moves the tape pointer to the left by 1.
+        ShiftLeft,
+
+        /// Moves the tape pointer to the right by 1.
+        ShiftRight,
 
         /// Pop from stack and add the value to current cell.
         Increment,

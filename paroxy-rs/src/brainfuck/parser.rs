@@ -47,8 +47,8 @@ impl<'a> Parser<'a> {
 
     pub fn expression(&mut self) {
         match &self.current.kind {
-            TokenKind::LeftAngle => self.emit_byte(OpCode::MovePointerLeft as u8),
-            TokenKind::RightAngle => self.emit_byte(OpCode::MovePointerRight as u8),
+            TokenKind::LeftAngle => self.emit_byte(OpCode::ShiftLeft as u8),
+            TokenKind::RightAngle => self.emit_byte(OpCode::ShiftRight as u8),
             TokenKind::Plus => self.emit_byte(OpCode::IncrementSingular as u8),
             TokenKind::Minus => self.emit_byte(OpCode::DecrementSingular as u8),
             TokenKind::Dot => {
@@ -240,9 +240,9 @@ mod tests {
                 8,
                 OpCode::Pop as u8,
                 OpCode::DecrementSingular as u8,
-                OpCode::MovePointerRight as u8,
+                OpCode::ShiftRight as u8,
                 OpCode::IncrementSingular as u8,
-                OpCode::MovePointerLeft as u8,
+                OpCode::ShiftLeft as u8,
                 OpCode::Loop as u8,
                 0,
                 12,

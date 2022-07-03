@@ -7,6 +7,7 @@ use crate::opcode::OpCode;
 pub struct VM {
     chunk: Chunk,
     tape: Vec<u8>,
+    tape_size: usize,
     ptr: usize,
     stack: Vec<Value>,
     ip: usize,
@@ -23,6 +24,7 @@ impl VM {
         Self {
             chunk,
             tape: vec![],
+            tape_size: 0,
             stack: vec![],
             ptr: 0,
             ip: 0,
@@ -81,6 +83,7 @@ impl VM {
                 OpCode::DefineTape => {
                     if let Value::Int(value) = self.stack_pop() {
                         self.tape.resize(value as usize, 0);
+                        self.tape_size = value as usize;
                     } else {
                         self.runtime_error("Expect an integer.");
                     }
@@ -92,10 +95,35 @@ impl VM {
                 OpCode::Constant => {
                     self.stack.push(read_constant!());
                 }
-                OpCode::MovePointerLeft => {
+                OpCode::MoveLeft => {
+                    let value = self.stack_pop();
+                    if let Value::Int(value) = value {
+                        if self.ptr > value as usize {
+                            self.ptr -= value as usize;
+                        } else {
+                            self.runtime_error("Pointer cannot move below zero.");
+                        }
+                    } else {
+                        self.runtime_error("Expect an integer.");
+                    }
+                }
+
+                OpCode::MoveRight => {
+                    let value = self.stack_pop();
+                    if let Value::Int(value) = value {
+                        if (self.ptr + value as usize) <= self.tape_size {
+                            self.ptr += value as usize;
+                        } else {
+                            self.runtime_error("Pointer exceeds tape size.");
+                        }
+                    } else {
+                        self.runtime_error("Expect an integer.");
+                    }
+                }
+                OpCode::ShiftLeft => {
                     self.ptr -= 1;
                 }
-                OpCode::MovePointerRight => {
+                OpCode::ShiftRight => {
                     self.ptr += 1;
                 }
                 OpCode::Increment => {

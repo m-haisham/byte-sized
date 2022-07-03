@@ -40,8 +40,10 @@ pub fn disassemble_instruction(chunk: &Chunk, offset: usize) -> usize {
     match instruction {
         OpCode::DefineTape => simple_instruction("OP_DEFINE_TAPE", offset),
         OpCode::PointerValue => simple_instruction("OP_POINTER_VALUE", offset),
-        OpCode::MovePointerLeft => simple_instruction("OP_POINTER_LEFT", offset),
-        OpCode::MovePointerRight => simple_instruction("OP_POINTER_RIGHT", offset),
+        OpCode::MoveLeft => simple_instruction("OP_MOVE_LEFT", offset),
+        OpCode::MoveRight => simple_instruction("OP_MOVE_RIGHT", offset),
+        OpCode::ShiftLeft => simple_instruction("OP_SHIFT_LEFT", offset),
+        OpCode::ShiftRight => simple_instruction("OP_SHIFT_RIGHT", offset),
         OpCode::Increment => simple_instruction("OP_INCREMENT", offset),
         OpCode::Decrement => simple_instruction("OP_DECREMENT", offset),
         OpCode::IncrementSingular => simple_instruction("OP_INCREMENT_SINGLE", offset),
