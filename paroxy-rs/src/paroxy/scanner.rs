@@ -76,7 +76,7 @@ impl<'a> PrScanner<'a> {
     }
 
     fn integer(&mut self) -> PrToken {
-        while self.is_digit(self.peek()) {
+        while !self.is_at_end() && self.is_digit(self.peek()) {
             self.advance();
         }
 

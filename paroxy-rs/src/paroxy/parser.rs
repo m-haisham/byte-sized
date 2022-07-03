@@ -43,9 +43,33 @@ impl<'a> PrParser<'a> {
 
     pub fn expression(&mut self) {
         match &self.current.kind {
+            PrTokenKind::Plus => self.plus(),
+            PrTokenKind::Minus => self.minus(),
             PrTokenKind::LeftBrace => self.define_tape(),
             PrTokenKind::String => self.string(),
             _ => (),
+        }
+    }
+
+    pub fn plus(&mut self) {
+        self.advance();
+        if self.matches(PrTokenKind::Integer) {
+            let size = self.previous.lexeme.parse::<u32>().unwrap();
+            self.emit_constant(Value::Int(size));
+            self.emit_byte(OpCode::Increment);
+        } else {
+            self.emit_byte(OpCode::IncrementSingular);
+        }
+    }
+
+    pub fn minus(&mut self) {
+        self.advance();
+        if self.matches(PrTokenKind::Integer) {
+            let size = self.previous.lexeme.parse::<u32>().unwrap();
+            self.emit_constant(Value::Int(size));
+            self.emit_byte(OpCode::Decrement);
+        } else {
+            self.emit_byte(OpCode::DecrementSingular);
         }
     }
 

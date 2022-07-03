@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, fs};
 
 use brainfuck::{parser::Parser, scanner::Scanner};
 use chunk::Chunk;
@@ -14,7 +14,7 @@ mod paroxy;
 mod vm;
 
 fn main() {
-    let default = "{30000}'Hello world!'$".to_owned();
+    let default = fs::read_to_string("scripts/main.px").unwrap();
     let source = env::args().nth(1).unwrap_or(default);
 
     let scanner = PrScanner::new(source.as_str());

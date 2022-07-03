@@ -42,6 +42,8 @@ pub fn disassemble_instruction(chunk: &Chunk, offset: usize) -> usize {
         OpCode::PointerValue => simple_instruction("OP_POINTER_VALUE", offset),
         OpCode::MovePointerLeft => simple_instruction("OP_POINTER_LEFT", offset),
         OpCode::MovePointerRight => simple_instruction("OP_POINTER_RIGHT", offset),
+        OpCode::Increment => simple_instruction("OP_INCREMENT", offset),
+        OpCode::Decrement => simple_instruction("OP_DECREMENT", offset),
         OpCode::IncrementSingular => simple_instruction("OP_INCREMENT_SINGLE", offset),
         OpCode::DecrementSingular => simple_instruction("OP_DECREMENT_SINGLE", offset),
         OpCode::Input => simple_instruction("OP_INPUT", offset),
