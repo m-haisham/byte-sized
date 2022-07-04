@@ -49,6 +49,7 @@ impl<'a> PrParser<'a> {
             PrTokenKind::RightAngle => self.sized_constant(OpCode::ShiftRight, OpCode::MoveRight),
             PrTokenKind::Dot => self.sized_constant(OpCode::Print, OpCode::PrintRange),
             PrTokenKind::Hash => self.replace_current(),
+            PrTokenKind::At => self.set_pointer_expression(),
             PrTokenKind::LeftBrace => self.define_tape(),
             PrTokenKind::LeftBracket => self.loop_expression(),
             PrTokenKind::String => self.string(),
@@ -99,6 +100,16 @@ impl<'a> PrParser<'a> {
 
         self.emit_byte(OpCode::WriteCell);
         self.emit_byte(value as u8);
+    }
+
+    fn set_pointer_expression(&mut self) {
+        self.advance();
+
+        self.consume(PrTokenKind::Integer, "Expect integer after '@'.");
+        let value = self.previous.lexeme.parse::<u32>().unwrap();
+
+        self.emit_constant(Value::Int(value));
+        self.emit_byte(OpCode::SetPointer);
     }
 
     fn define_tape(&mut self) {

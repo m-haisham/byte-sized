@@ -68,7 +68,14 @@ impl VM {
 
         loop {
             if DEBUG_TRACE_EXECUTION {
+                let safe_cell = if self.tape.len() > self.ptr {
+                    format!("{}->{}", self.ptr, self.tape[self.ptr])
+                } else {
+                    String::new()
+                };
+
                 print!("          ");
+                print!("[{safe_cell}] ");
                 for value in self.stack.iter() {
                     print!("[ {value} ]");
                 }
@@ -91,6 +98,18 @@ impl VM {
                 OpCode::PointerValue => {
                     let value = current_cell!();
                     self.stack.push(Value::Int(value as u32));
+                }
+                OpCode::SetPointer => {
+                    let value = self.stack_pop();
+                    if let Value::Int(value) = value {
+                        if (value as usize) < self.tape.len() {
+                            self.ptr = value as usize;
+                        } else {
+                            self.runtime_error("Tape overflow.");
+                        }
+                    } else {
+                        self.runtime_error("Expect an integer.");
+                    }
                 }
                 OpCode::Constant => {
                     self.stack.push(read_constant!());

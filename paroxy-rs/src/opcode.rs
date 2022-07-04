@@ -31,6 +31,9 @@ back_to_enum!(
         /// Adds the current pointer value to stack.
         PointerValue,
 
+        /// Change the pointer value.
+        SetPointer,
+
         /// Adds the constant in the defined position to the stack.
         Constant,
 
