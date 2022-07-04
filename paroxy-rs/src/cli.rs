@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
@@ -23,5 +25,24 @@ pub enum Commands {
         /// The source is brainfuck code.
         #[clap(short, long, action)]
         brainfuck: bool,
+    },
+
+    /// Compile given program into binary bundle
+    Compile {
+        /// Program string or file.
+        #[clap(value_parser)]
+        source: String,
+
+        /// The source is a file.
+        #[clap(short, long, action)]
+        file: bool,
+
+        /// The source is brainfuck code.
+        #[clap(short, long, action)]
+        brainfuck: bool,
+
+        /// The output path
+        #[clap(value_parser)]
+        out: Option<PathBuf>,
     },
 }

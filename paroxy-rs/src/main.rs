@@ -1,5 +1,6 @@
-use std::{env, fs};
+use std::{env, fs, path::PathBuf};
 
+use bincode::{DefaultOptions, Options};
 use brainfuck::{parser::BfParser, scanner::BfScanner};
 use chunk::Chunk;
 use clap::Parser;
@@ -24,17 +25,59 @@ fn main() {
             file,
             brainfuck,
         } => {
-            let program = if file {
-                fs::read_to_string(source).expect("Unable to read file.")
-            } else {
-                source
-            };
+            let program = get_program(source, file);
 
             match parse(program, brainfuck) {
                 Ok(chunk) => run(chunk),
                 Err(_) => return,
             };
         }
+        cli::Commands::Compile {
+            source,
+            file,
+            brainfuck,
+            out,
+        } => {
+            if !file && out.is_none() {
+                println!("'--out' must be used when using raw program code.");
+                return;
+            }
+
+            let program = get_program(source.clone(), file);
+
+            let chunk = match parse(program, brainfuck) {
+                Ok(chunk) => chunk,
+                Err(_) => return,
+            };
+
+            let bytes = DefaultOptions::new()
+                .with_varint_encoding()
+                .serialize(&chunk)
+                .expect("Failed to serialize data");
+
+            let file = match out {
+                Some(path) => path,
+                None => {
+                    let source_file = PathBuf::from(source);
+                    let parent = source_file.parent().unwrap();
+
+                    let out_stem = source_file.file_stem().unwrap().to_string_lossy();
+                    let out_name = format!("{out_stem}.pxb");
+
+                    parent.join(out_name)
+                }
+            };
+
+            fs::write(file, bytes).expect("Failed to write bytecode.");
+        }
+    }
+}
+
+fn get_program(source: String, file: bool) -> String {
+    if file {
+        fs::read_to_string(source).expect("Unable to read file.")
+    } else {
+        source
     }
 }
 
