@@ -1,4 +1,4 @@
-use std::{env, fs, path::PathBuf};
+use std::{fs, path::PathBuf};
 
 use bincode::{DefaultOptions, Options};
 use brainfuck::{parser::BfParser, scanner::BfScanner};

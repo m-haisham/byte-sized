@@ -72,10 +72,6 @@ impl<'a> PrScanner<'a> {
         self.make_token(PrTokenKind::String)
     }
 
-    fn is_alpha(&self, c: char) -> bool {
-        (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
-    }
-
     fn integer(&mut self) -> PrToken {
         while !self.is_at_end() && self.is_digit(self.peek()) {
             self.advance();

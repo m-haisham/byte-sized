@@ -38,23 +38,11 @@ impl PrToken {
         Self { kind, lexeme, line }
     }
 
-    pub fn synthetic<T: Into<String>>(text: T) -> Self {
-        Self {
-            kind: PrTokenKind::Error,
-            lexeme: text.into(),
-            line: 0,
-        }
-    }
-
     pub fn empty() -> Self {
         Self {
             kind: PrTokenKind::Error,
             lexeme: String::from(""),
             line: 0,
         }
-    }
-
-    pub fn lexeme_equal(&self, other: &Self) -> bool {
-        return self.lexeme == other.lexeme;
     }
 }
