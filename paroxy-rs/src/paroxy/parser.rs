@@ -55,6 +55,7 @@ impl<'a> PrParser<'a> {
             PrTokenKind::LeftAngle => self.sized_constant(OpCode::ShiftLeft, OpCode::MoveLeft),
             PrTokenKind::RightAngle => self.sized_constant(OpCode::ShiftRight, OpCode::MoveRight),
             PrTokenKind::Dot => self.sized_constant(OpCode::Print, OpCode::PrintRange),
+            PrTokenKind::Comma => self.input_expression(),
             PrTokenKind::Hash => self.replace_current(),
             PrTokenKind::At => self.set_pointer_expression(),
             PrTokenKind::LeftBrace => self.define_tape(),
@@ -90,6 +91,11 @@ impl<'a> PrParser<'a> {
         } else {
             self.emit_byte(one);
         }
+    }
+
+    fn input_expression(&mut self) {
+        self.advance();
+        self.emit_byte(OpCode::Input);
     }
 
     fn replace_current(&mut self) {

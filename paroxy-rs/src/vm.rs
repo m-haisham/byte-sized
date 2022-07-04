@@ -254,11 +254,6 @@ impl VM {
             .expect("Expect stack last item to be filled.")
     }
 
-    fn stack_peek(&self, distance: usize) -> &Value {
-        let index = (self.stack.len() - distance) - 1;
-        &self.stack[index]
-    }
-
     fn runtime_error(&mut self, message: &str) {
         eprintln!("{message}");
         self.stack.clear();
