@@ -41,7 +41,7 @@ impl<'a> PrScanner<'a> {
             '$' => self.make_token(PrTokenKind::Dollar),
             '@' => self.make_token(PrTokenKind::At),
             '#' => self.make_token(PrTokenKind::Hash),
-            ':' => self.make_token(PrTokenKind::Colon),
+            // ':' => self.make_token(PrTokenKind::Colon),
             '+' => self.make_token(PrTokenKind::Plus),
             '-' => self.make_token(PrTokenKind::Minus),
             n @ ('\'' | '"') => self.string(n),
@@ -50,7 +50,7 @@ impl<'a> PrScanner<'a> {
                     return self.integer();
                 }
 
-                return self.error_token("Unexpected character.");
+                return self.make_token(PrTokenKind::Ignore);
             }
         }
     }

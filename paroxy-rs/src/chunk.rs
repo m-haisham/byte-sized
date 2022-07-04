@@ -54,12 +54,3 @@ impl Display for Value {
         }
     }
 }
-
-impl Value {
-    pub fn truthy(&self) -> bool {
-        match self {
-            Value::Int(value) => *value != 0,
-            Value::String(value) => true,
-        }
-    }
-}

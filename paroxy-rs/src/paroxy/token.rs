@@ -20,7 +20,7 @@ pub enum PrTokenKind {
     At,
     Hash,
     Dot,
-    Colon,
+    // Colon,
     Plus,
     Minus,
 
@@ -29,6 +29,7 @@ pub enum PrTokenKind {
     String,
 
     // Misc.
+    Ignore,
     Error,
     EOF,
 }

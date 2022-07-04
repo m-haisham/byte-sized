@@ -173,6 +173,7 @@ impl<'a> PrParser<'a> {
 
             match self.current.kind {
                 PrTokenKind::Error => (),
+                PrTokenKind::Ignore => continue,
                 _ => break,
             }
 

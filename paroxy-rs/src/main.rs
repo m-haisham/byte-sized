@@ -1,6 +1,5 @@
 use std::{fs, path::PathBuf};
 
-use bincode::{DefaultOptions, Options};
 use brainfuck::{parser::BfParser, scanner::BfScanner};
 use chunk::Chunk;
 use clap::Parser;
@@ -29,7 +28,7 @@ fn main() {
             if compiled && !file {
                 panic!("use '--file' flag when running compiled chunk.");
             } else if compiled && brainfuck {
-                panic!("'--brainfuck' not supported with '--compiled'");
+                panic!("'--brainfuck' not supported with '--compiled'.");
             }
 
             match get_chunk(source, file, brainfuck, compiled) {
@@ -55,10 +54,7 @@ fn main() {
                 Err(_) => return,
             };
 
-            let bytes = DefaultOptions::new()
-                .with_varint_encoding()
-                .serialize(&chunk)
-                .expect("Failed to serialize data");
+            let bytes = chunk.as_bytes().expect("Failed to serialize data");
 
             let file = match out {
                 Some(path) => path,
