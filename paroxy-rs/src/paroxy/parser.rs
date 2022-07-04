@@ -34,6 +34,13 @@ impl<'a> PrParser<'a> {
 
     pub fn compile(&mut self) -> bool {
         self.advance();
+
+        // Default tape definition
+        if self.current.kind != PrTokenKind::LeftBracket {
+            self.emit_constant(Value::Int(30000));
+            self.emit_byte(OpCode::DefineTape);
+        }
+
         while !self.matches(PrTokenKind::EOF) {
             self.expression();
         }
