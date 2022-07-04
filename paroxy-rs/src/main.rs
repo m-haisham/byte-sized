@@ -24,13 +24,18 @@ fn main() {
             source,
             file,
             brainfuck,
+            compiled,
         } => {
-            let program = get_program(source, file);
+            if compiled && !file {
+                panic!("use '--file' flag when running compiled chunk.");
+            } else if compiled && brainfuck {
+                panic!("'--brainfuck' not supported with '--compiled'");
+            }
 
-            match parse(program, brainfuck) {
+            match get_chunk(source, file, brainfuck, compiled) {
                 Ok(chunk) => run(chunk),
-                Err(_) => return,
-            };
+                Err(error) => panic!("{error}"),
+            }
         }
         cli::Commands::Compile {
             source,
@@ -70,6 +75,25 @@ fn main() {
 
             fs::write(file, bytes).expect("Failed to write bytecode.");
         }
+    }
+}
+
+fn get_chunk(
+    source: String,
+    file: bool,
+    brainfuck: bool,
+    compiled: bool,
+) -> Result<Chunk, &'static str> {
+    if compiled {
+        let bytes = fs::read(source).expect("Unable to read file.");
+
+        match Chunk::from_bytes(&bytes) {
+            Ok(chunk) => Ok(chunk),
+            Err(_) => Err("Failed to load chunk from binary data."),
+        }
+    } else {
+        let program = get_program(source, file);
+        parse(program, brainfuck)
     }
 }
 

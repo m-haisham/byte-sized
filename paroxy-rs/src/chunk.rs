@@ -1,5 +1,6 @@
 use std::{fmt::Display, rc::Rc};
 
+use bincode::{DefaultOptions, Options};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -32,6 +33,16 @@ impl Chunk {
     pub fn add_constant(&mut self, value: Value) -> usize {
         self.constants.push(value);
         return self.constants.len() - 1;
+    }
+
+    pub fn as_bytes(&self) -> Result<Vec<u8>, Box<bincode::ErrorKind>> {
+        DefaultOptions::new().with_varint_encoding().serialize(self)
+    }
+
+    pub fn from_bytes(bytes: &Vec<u8>) -> Result<Self, Box<bincode::ErrorKind>> {
+        DefaultOptions::new()
+            .with_varint_encoding()
+            .deserialize(bytes)
     }
 }
 

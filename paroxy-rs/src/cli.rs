@@ -25,6 +25,10 @@ pub enum Commands {
         /// The source is brainfuck code.
         #[clap(short, long, action)]
         brainfuck: bool,
+
+        /// The source is compiled binary data.
+        #[clap(short, long, action)]
+        compiled: bool,
     },
 
     /// Compile given program into binary bundle

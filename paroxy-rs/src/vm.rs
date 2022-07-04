@@ -198,6 +198,11 @@ impl VM {
                 }
                 OpCode::Print => {
                     print!("{}", current_cell!() as char);
+
+                    // Make sure stack trace is on the next line.
+                    if DEBUG_TRACE_EXECUTION {
+                        println!();
+                    }
                 }
                 OpCode::PrintRange => {
                     let value = self.stack_pop();
@@ -205,6 +210,11 @@ impl VM {
                         let range = &self.tape[self.ptr..self.ptr + value as usize];
                         let output = range.iter().map(|c| *c as char).collect::<String>();
                         print!("{output}");
+
+                        // Make sure stack trace is on the next line.
+                        if DEBUG_TRACE_EXECUTION {
+                            println!();
+                        }
                     } else {
                         self.runtime_error("Expect a number.");
                     }
