@@ -62,6 +62,9 @@ back_to_enum!(
         /// to the tape.
         WriteString,
 
+        /// Replace the cell with the value
+        WriteCell,
+
         /// Output the current pointer value.
         Print,
 

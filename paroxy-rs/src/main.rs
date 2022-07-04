@@ -30,24 +30,29 @@ fn main() {
                 source
             };
 
-            let chunk = parse(program, brainfuck);
-
-            run(chunk);
+            match parse(program, brainfuck) {
+                Ok(chunk) => run(chunk),
+                Err(_) => return,
+            };
         }
     }
 }
 
-fn parse(program: String, brainfuck: bool) -> Chunk {
+fn parse(program: String, brainfuck: bool) -> Result<Chunk, &'static str> {
     let mut chunk = Chunk::new();
-    if brainfuck {
+    let success = if brainfuck {
         let scanner = BfScanner::new(program.as_str());
-        BfParser::new(scanner, &mut chunk).compile();
+        BfParser::new(scanner, &mut chunk).compile()
     } else {
         let scanner = PrScanner::new(program.as_str());
-        PrParser::new(scanner, &mut chunk).compile();
-    }
+        PrParser::new(scanner, &mut chunk).compile()
+    };
 
-    chunk
+    if success {
+        Ok(chunk)
+    } else {
+        Err("Compilation failed")
+    }
 }
 
 fn run(chunk: Chunk) {

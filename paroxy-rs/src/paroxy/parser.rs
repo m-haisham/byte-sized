@@ -48,6 +48,7 @@ impl<'a> PrParser<'a> {
             PrTokenKind::LeftAngle => self.sized_constant(OpCode::ShiftLeft, OpCode::MoveLeft),
             PrTokenKind::RightAngle => self.sized_constant(OpCode::ShiftRight, OpCode::MoveRight),
             PrTokenKind::Dot => self.sized_constant(OpCode::Print, OpCode::PrintRange),
+            PrTokenKind::Hash => self.replace_current(),
             PrTokenKind::LeftBrace => self.define_tape(),
             PrTokenKind::String => self.string(),
             _ => (),
@@ -80,6 +81,23 @@ impl<'a> PrParser<'a> {
         } else {
             self.emit_byte(one);
         }
+    }
+
+    fn replace_current(&mut self) {
+        self.advance();
+
+        self.consume(PrTokenKind::Integer, "Expect integer after '#'.");
+        let value = self.previous.lexeme.parse::<usize>().unwrap();
+        if value > u8::MAX as usize {
+            self.error_at(
+                self.previous.clone(),
+                "Expect integer between 0 and 255 (included).",
+            );
+            return;
+        }
+
+        self.emit_byte(OpCode::WriteCell);
+        self.emit_byte(value as u8);
     }
 
     fn define_tape(&mut self) {

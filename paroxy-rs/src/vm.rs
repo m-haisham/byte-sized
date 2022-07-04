@@ -60,7 +60,7 @@ impl VM {
             }};
         }
 
-        macro_rules! ptr_deref {
+        macro_rules! current_cell {
             () => {
                 self.tape[self.ptr]
             };
@@ -89,7 +89,7 @@ impl VM {
                     }
                 }
                 OpCode::PointerValue => {
-                    let value = ptr_deref!();
+                    let value = current_cell!();
                     self.stack.push(Value::Int(value as u32));
                 }
                 OpCode::Constant => {
@@ -128,15 +128,15 @@ impl VM {
                 }
                 OpCode::Increment => {
                     let value = read_byte!();
-                    let available = u8::MAX - ptr_deref!();
+                    let available = u8::MAX - current_cell!();
                     if available > value {
-                        ptr_deref!() += value as u8;
+                        current_cell!() += value as u8;
                     } else {
                         self.runtime_error(
                             format!(
                                 "Cannot be greater than {} [{}]",
                                 u8::MAX,
-                                value + ptr_deref!()
+                                value + current_cell!()
                             )
                             .as_str(),
                         );
@@ -144,21 +144,25 @@ impl VM {
                 }
                 OpCode::Decrement => {
                     let value = read_byte!();
-                    let available = ptr_deref!() - u8::MIN;
+                    let available = current_cell!() - u8::MIN;
                     if available > value {
-                        ptr_deref!() -= value as u8;
+                        current_cell!() -= value as u8;
                     } else {
                         self.runtime_error(
-                            format!("Cannot be less than {} [{}]", u8::MIN, value - ptr_deref!())
-                                .as_str(),
+                            format!(
+                                "Cannot be less than {} [{}]",
+                                u8::MIN,
+                                value - current_cell!()
+                            )
+                            .as_str(),
                         );
                     }
                 }
                 OpCode::IncrementSingular => {
-                    ptr_deref!() += 1;
+                    current_cell!() += 1;
                 }
                 OpCode::DecrementSingular => {
-                    ptr_deref!() -= 1;
+                    current_cell!() -= 1;
                 }
                 OpCode::WriteString => {
                     let value = self.stack_pop();
@@ -170,8 +174,11 @@ impl VM {
                         self.runtime_error("Expect a string value.");
                     }
                 }
+                OpCode::WriteCell => {
+                    current_cell!() = read_byte!();
+                }
                 OpCode::Print => {
-                    print!("{}", ptr_deref!() as char);
+                    print!("{}", current_cell!() as char);
                 }
                 OpCode::PrintRange => {
                     let value = self.stack_pop();
@@ -187,7 +194,7 @@ impl VM {
                     let mut line = String::new();
                     stdin().read_line(&mut line).unwrap();
                     match line.chars().nth(0) {
-                        Some(char) => ptr_deref!() = char as u8,
+                        Some(char) => current_cell!() = char as u8,
                         None => (),
                     }
                 }

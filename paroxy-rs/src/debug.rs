@@ -52,6 +52,7 @@ pub fn disassemble_instruction(chunk: &Chunk, offset: usize) -> usize {
         OpCode::Constant => constant_instruction("OP_CONSTANT", chunk, offset),
         OpCode::Pop => simple_instruction("OP_POP", offset),
         OpCode::WriteString => simple_instruction("OP_WRITE_STRING", offset),
+        OpCode::WriteCell => byte_instruction("OP_WRITE_CELL", chunk, offset),
         OpCode::Print => simple_instruction("OP_PRINT", offset),
         OpCode::PrintRange => simple_instruction("OP_PRINT_RANGE", offset),
         OpCode::JumpIfFalse => jump_instruction("OP_JUMP_IF_FALSE", 1, chunk, offset),
