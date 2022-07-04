@@ -75,8 +75,8 @@ back_to_enum!(
         /// set it to the current pointer cell.
         Input,
 
-        /// Jump to the defined place if stack value is zero.
-        JumpIfFalse,
+        /// Jump to the defined place if current cell is zero.
+        JumpIfZero,
 
         /// Jump to the defined place (usually before this instruction).
         Loop,

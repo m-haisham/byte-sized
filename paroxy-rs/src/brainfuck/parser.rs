@@ -62,10 +62,7 @@ impl<'a> BfParser<'a> {
 
     pub fn repeat(&mut self) {
         let loop_start = self.current_chunk().code.len();
-
-        self.emit_byte(OpCode::PointerValue as u8);
-        let repeat_jump = self.emit_jump(OpCode::JumpIfFalse);
-        self.emit_byte(OpCode::Pop as u8);
+        let repeat_jump = self.emit_jump(OpCode::JumpIfZero);
 
         self.advance();
         while !self.check(TokenKind::RightBracket) {
@@ -74,7 +71,6 @@ impl<'a> BfParser<'a> {
 
         self.emit_loop(loop_start);
         self.patch_jump(repeat_jump);
-        self.emit_byte(OpCode::Pop as u8);
     }
 
     fn advance(&mut self) {
@@ -231,7 +227,7 @@ mod tests {
                 0,
                 OpCode::Input as u8,
                 OpCode::PointerValue as u8,
-                OpCode::JumpIfFalse as u8,
+                OpCode::JumpIfZero as u8,
                 0,
                 8,
                 OpCode::Pop as u8,

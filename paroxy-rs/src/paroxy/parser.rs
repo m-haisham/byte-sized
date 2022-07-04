@@ -50,6 +50,7 @@ impl<'a> PrParser<'a> {
             PrTokenKind::Dot => self.sized_constant(OpCode::Print, OpCode::PrintRange),
             PrTokenKind::Hash => self.replace_current(),
             PrTokenKind::LeftBrace => self.define_tape(),
+            PrTokenKind::LeftBracket => self.loop_expression(),
             PrTokenKind::String => self.string(),
             _ => (),
         }
@@ -109,6 +110,19 @@ impl<'a> PrParser<'a> {
         self.emit_byte(OpCode::DefineTape);
 
         self.consume(PrTokenKind::RightBrace, "Expect '}' after define tape.");
+    }
+
+    fn loop_expression(&mut self) {
+        let loop_start = self.current_chunk().code.len();
+        let repeat_jump = self.emit_jump(OpCode::JumpIfZero);
+
+        self.advance();
+        while !self.matches(PrTokenKind::RightBracket) {
+            self.expression();
+        }
+
+        self.emit_loop(loop_start);
+        self.patch_jump(repeat_jump);
     }
 
     pub fn string(&mut self) {

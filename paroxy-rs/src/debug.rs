@@ -55,7 +55,7 @@ pub fn disassemble_instruction(chunk: &Chunk, offset: usize) -> usize {
         OpCode::WriteCell => byte_instruction("OP_WRITE_CELL", chunk, offset),
         OpCode::Print => simple_instruction("OP_PRINT", offset),
         OpCode::PrintRange => simple_instruction("OP_PRINT_RANGE", offset),
-        OpCode::JumpIfFalse => jump_instruction("OP_JUMP_IF_FALSE", 1, chunk, offset),
+        OpCode::JumpIfZero => jump_instruction("OP_JUMP_IF_ZERO", 1, chunk, offset),
         OpCode::Loop => jump_instruction("OP_LOOP", -1, chunk, offset),
         OpCode::Return => simple_instruction("OP_RETURN", offset),
     }

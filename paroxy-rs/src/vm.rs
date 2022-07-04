@@ -198,9 +198,9 @@ impl VM {
                         None => (),
                     }
                 }
-                OpCode::JumpIfFalse => {
+                OpCode::JumpIfZero => {
                     let offset = read_short!();
-                    if !self.stack_peek(0).truthy() {
+                    if current_cell!() == 0 {
                         self.ip += offset as usize;
                     }
                 }
