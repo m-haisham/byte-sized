@@ -117,7 +117,7 @@ impl VM {
                 OpCode::MoveLeft => {
                     let value = self.stack_pop();
                     if let Value::Int(value) = value {
-                        if self.ptr > value as usize {
+                        if self.ptr >= value as usize {
                             self.ptr -= value as usize;
                         } else {
                             self.runtime_error("Pointer cannot move below zero.");
@@ -126,7 +126,6 @@ impl VM {
                         self.runtime_error("Expect an integer.");
                     }
                 }
-
                 OpCode::MoveRight => {
                     let value = self.stack_pop();
                     if let Value::Int(value) = value {
@@ -225,6 +224,26 @@ impl VM {
                     match line.chars().nth(0) {
                         Some(char) => current_cell!() = char as u8,
                         None => (),
+                    }
+                }
+                OpCode::MultiInput => {
+                    let flags = read_byte!();
+
+                    let mut line = String::new();
+                    stdin().read_line(&mut line).unwrap();
+
+                    if line.len() < (self.tape_size - self.ptr - 1) {
+                        let move_pointer_flag = flags & 0x00000001 == 0x00000001;
+
+                        for (i, c) in line.chars().enumerate() {
+                            self.tape[self.ptr + i] = c as u8;
+                        }
+
+                        if move_pointer_flag {
+                            self.ptr += line.len();
+                        }
+                    } else {
+                        self.runtime_error("The input is too large for following cells");
                     }
                 }
                 OpCode::JumpIfZero => {

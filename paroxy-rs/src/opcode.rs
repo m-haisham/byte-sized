@@ -78,6 +78,9 @@ back_to_enum!(
         /// set it to the current pointer cell.
         Input,
 
+        /// Take input and write to following cells.
+        MultiInput,
+
         /// Jump to the defined place if current cell is zero.
         JumpIfZero,
 

@@ -20,7 +20,8 @@ pub enum TokenKind {
     At,
     Hash,
     Dot,
-    // Colon,
+    Star,
+    Caret,
     Plus,
     Minus,
 

@@ -50,6 +50,7 @@ pub fn disassemble_instruction(chunk: &Chunk, offset: usize) -> usize {
         OpCode::IncrementSingular => simple_instruction("OP_INCREMENT_SINGLE", offset),
         OpCode::DecrementSingular => simple_instruction("OP_DECREMENT_SINGLE", offset),
         OpCode::Input => simple_instruction("OP_INPUT", offset),
+        OpCode::MultiInput => byte_instruction("OP_MULTI_INPUT", chunk, offset),
         OpCode::Constant => constant_instruction("OP_CONSTANT", chunk, offset),
         OpCode::Pop => simple_instruction("OP_POP", offset),
         OpCode::WriteString => simple_instruction("OP_WRITE_STRING", offset),

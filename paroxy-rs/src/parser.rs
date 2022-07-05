@@ -95,7 +95,18 @@ impl<'a> Parser<'a> {
 
     fn input_expression(&mut self) {
         self.advance();
-        self.emit_byte(OpCode::Input);
+
+        if !self.matches(TokenKind::Star) {
+            self.emit_byte(OpCode::Input);
+        }
+
+        self.emit_byte(OpCode::MultiInput);
+        let mut flags: u8 = 0x00000000;
+        if self.matches(TokenKind::Caret) {
+            flags = flags | 0x00000001;
+        }
+
+        self.emit_byte(flags);
     }
 
     fn replace_current(&mut self) {
