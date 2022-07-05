@@ -174,6 +174,11 @@ impl<'a> Parser<'a> {
             self.emit_constant(Value::Int(length as u32));
             self.emit_byte(OpCode::PrintRange);
         }
+
+        if self.matches(TokenKind::Caret) {
+            self.emit_constant(Value::Int(length as u32));
+            self.emit_byte(OpCode::MoveRight);
+        }
     }
 
     fn advance(&mut self) {

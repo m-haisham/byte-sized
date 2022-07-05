@@ -1,0 +1,15 @@
+expression      => increment
+                 | decrement
+                 | left
+                 | right
+                 | loop
+                 | print
+                 | input
+
+increment       => "+" NUMBER
+decrement       => "-" NUMBER
+left            => "<" NUMBER
+right           => ">" NUMBER
+loop            => "[" expression* "]"
+print           => "." "$"? "^"?
+input           => "," "*"? "^"?
