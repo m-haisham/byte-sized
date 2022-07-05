@@ -1,4 +1,4 @@
-use std::mem;
+use std::{mem, rc::Rc};
 
 use crate::{
     chunk::{Chunk, Value},
@@ -7,37 +7,40 @@ use crate::{
 };
 
 use super::{
-    scanner::BfScanner,
+    scanner::Scanner,
     token::{Token, TokenKind},
 };
 
-pub struct BfParser<'a> {
-    scanner: BfScanner,
+pub struct Parser<'a> {
+    scanner: Scanner<'a>,
     chunk: &'a mut Chunk,
-
     previous: Token,
     current: Token,
     had_error: bool,
     panic_mode: bool,
 }
 
-impl<'a> BfParser<'a> {
-    pub fn new(scanner: BfScanner, chunk: &'a mut Chunk) -> Self {
+impl<'a> Parser<'a> {
+    pub fn new(scanner: Scanner<'a>, chunk: &'a mut Chunk) -> Self {
         Self {
             scanner,
             chunk,
-            previous: Token::new(TokenKind::Error, 0),
-            current: Token::new(TokenKind::Error, 0),
+            previous: Token::empty(),
+            current: Token::empty(),
             had_error: false,
             panic_mode: false,
         }
     }
 
     pub fn compile(&mut self) -> bool {
-        self.emit_constant(Value::Int(30000));
-        self.emit_byte(OpCode::DefineTape);
-
         self.advance();
+
+        // Default tape definition
+        if self.current.kind != TokenKind::LeftBracket {
+            self.emit_constant(Value::Int(30000));
+            self.emit_byte(OpCode::DefineTape);
+        }
+
         while !self.matches(TokenKind::EOF) {
             self.expression();
         }
@@ -47,30 +50,119 @@ impl<'a> BfParser<'a> {
 
     pub fn expression(&mut self) {
         match &self.current.kind {
-            TokenKind::LeftAngle => self.emit_byte(OpCode::ShiftLeft as u8),
-            TokenKind::RightAngle => self.emit_byte(OpCode::ShiftRight as u8),
-            TokenKind::Plus => self.emit_byte(OpCode::IncrementSingular as u8),
-            TokenKind::Minus => self.emit_byte(OpCode::DecrementSingular as u8),
-            TokenKind::Dot => self.emit_byte(OpCode::Print as u8),
-            TokenKind::Comma => self.emit_byte(OpCode::Input as u8),
-            TokenKind::LeftBracket => self.repeat(),
-            _ => panic!("Unexpected token"),
+            TokenKind::Plus => self.sized_code(OpCode::IncrementSingular, OpCode::Increment),
+            TokenKind::Minus => self.sized_code(OpCode::DecrementSingular, OpCode::Decrement),
+            TokenKind::LeftAngle => self.sized_constant(OpCode::ShiftLeft, OpCode::MoveLeft),
+            TokenKind::RightAngle => self.sized_constant(OpCode::ShiftRight, OpCode::MoveRight),
+            TokenKind::Dot => self.sized_constant(OpCode::Print, OpCode::PrintRange),
+            TokenKind::Comma => self.input_expression(),
+            TokenKind::Hash => self.replace_current(),
+            TokenKind::At => self.set_pointer_expression(),
+            TokenKind::LeftBrace => self.define_tape(),
+            TokenKind::LeftBracket => self.loop_expression(),
+            TokenKind::String => self.string(),
+            _ => (),
         }
-
-        self.advance();
     }
 
-    pub fn repeat(&mut self) {
+    fn sized_constant(&mut self, one: OpCode, many: OpCode) {
+        self.advance();
+        if self.matches(TokenKind::Integer) {
+            let size = self.previous.lexeme.parse::<u32>().unwrap();
+            self.emit_constant(Value::Int(size));
+            self.emit_byte(many);
+        } else {
+            self.emit_byte(one);
+        }
+    }
+
+    fn sized_code(&mut self, one: OpCode, many: OpCode) {
+        self.advance();
+        if self.matches(TokenKind::Integer) {
+            let size = self.previous.lexeme.parse::<usize>().unwrap();
+
+            if size > u8::MAX as usize {
+                self.error_at_current("Expect integer between 0-255.");
+                return;
+            }
+
+            self.emit_byte(many);
+            self.emit_byte(size as u8);
+        } else {
+            self.emit_byte(one);
+        }
+    }
+
+    fn input_expression(&mut self) {
+        self.advance();
+        self.emit_byte(OpCode::Input);
+    }
+
+    fn replace_current(&mut self) {
+        self.advance();
+
+        self.consume(TokenKind::Integer, "Expect integer after '#'.");
+        let value = self.previous.lexeme.parse::<usize>().unwrap();
+        if value > u8::MAX as usize {
+            self.error_at(
+                self.previous.clone(),
+                "Expect integer between 0 and 255 (included).",
+            );
+            return;
+        }
+
+        self.emit_byte(OpCode::WriteCell);
+        self.emit_byte(value as u8);
+    }
+
+    fn set_pointer_expression(&mut self) {
+        self.advance();
+
+        self.consume(TokenKind::Integer, "Expect integer after '@'.");
+        let value = self.previous.lexeme.parse::<u32>().unwrap();
+
+        self.emit_constant(Value::Int(value));
+        self.emit_byte(OpCode::SetPointer);
+    }
+
+    fn define_tape(&mut self) {
+        self.advance();
+        self.consume(TokenKind::Integer, "Expect a number after '{'.");
+        let size = self.previous.lexeme.parse::<u32>().unwrap();
+
+        self.emit_constant(Value::Int(size));
+        self.emit_byte(OpCode::DefineTape);
+
+        self.consume(TokenKind::RightBrace, "Expect '}' after define tape.");
+    }
+
+    fn loop_expression(&mut self) {
         let loop_start = self.current_chunk().code.len();
         let repeat_jump = self.emit_jump(OpCode::JumpIfZero);
 
         self.advance();
-        while !self.check(TokenKind::RightBracket) {
+        while !self.matches(TokenKind::RightBracket) {
             self.expression();
         }
 
         self.emit_loop(loop_start);
         self.patch_jump(repeat_jump);
+    }
+
+    pub fn string(&mut self) {
+        let value = String::from(&self.current.lexeme[1..self.current.lexeme.len() - 1]);
+        let length = value.len();
+
+        let rc = Rc::from(value);
+
+        self.emit_constant(Value::String(rc));
+        self.emit_byte(OpCode::WriteString);
+        self.advance();
+
+        if self.matches(TokenKind::Dollar) {
+            self.emit_constant(Value::Int(length as u32));
+            self.emit_byte(OpCode::PrintRange);
+        }
     }
 
     fn advance(&mut self) {
@@ -81,6 +173,7 @@ impl<'a> BfParser<'a> {
 
             match self.current.kind {
                 TokenKind::Error => (),
+                TokenKind::Ignore => continue,
                 _ => break,
             }
 
@@ -99,6 +192,15 @@ impl<'a> BfParser<'a> {
 
     fn check(&self, kind: TokenKind) -> bool {
         self.current.kind == kind
+    }
+
+    fn consume(&mut self, kind: TokenKind, message: &str) {
+        if self.current.kind == kind {
+            self.advance();
+            return;
+        }
+
+        self.error_at_current(message);
     }
 
     fn error(&mut self, message: &str) {
@@ -204,46 +306,5 @@ impl<'a> BfParser<'a> {
         }
 
         !self.had_error
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn should_parse_brainfuck() {
-        let scanner = BfScanner::new(",[->+<].");
-        let mut chunk = Chunk::new();
-
-        let mut parser = BfParser::new(scanner, &mut chunk);
-        parser.compile();
-
-        assert_eq!(
-            chunk.code,
-            vec![
-                OpCode::Constant as u8,
-                OpCode::DefineTape as u8,
-                0,
-                OpCode::Input as u8,
-                OpCode::PointerValue as u8,
-                OpCode::JumpIfZero as u8,
-                0,
-                8,
-                OpCode::Pop as u8,
-                OpCode::DecrementSingular as u8,
-                OpCode::ShiftRight as u8,
-                OpCode::IncrementSingular as u8,
-                OpCode::ShiftLeft as u8,
-                OpCode::Loop as u8,
-                0,
-                12,
-                OpCode::Pop as u8,
-                OpCode::PointerValue as u8,
-                OpCode::Print as u8,
-                OpCode::PointerValue as u8,
-                OpCode::Return as u8,
-            ],
-        );
     }
 }

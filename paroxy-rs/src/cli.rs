@@ -22,10 +22,6 @@ pub enum Commands {
         #[clap(short, long, action)]
         file: bool,
 
-        /// The source is brainfuck code.
-        #[clap(short, long, action)]
-        brainfuck: bool,
-
         /// The source is compiled binary data.
         #[clap(short, long, action)]
         compiled: bool,
@@ -40,10 +36,6 @@ pub enum Commands {
         /// The source is a file.
         #[clap(short, long, action)]
         file: bool,
-
-        /// The source is brainfuck code.
-        #[clap(short, long, action)]
-        brainfuck: bool,
 
         /// The output path
         #[clap(value_parser)]

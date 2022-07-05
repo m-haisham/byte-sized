@@ -1,18 +1,18 @@
 use std::{fs, path::PathBuf};
 
-use brainfuck::{parser::BfParser, scanner::BfScanner};
 use chunk::Chunk;
 use clap::Parser;
-use paroxy::{parser::PrParser, scanner::PrScanner};
+use scanner::Scanner;
 use vm::VM;
 
-mod brainfuck;
 mod chunk;
 mod opcode;
 
 mod cli;
 mod debug;
-mod paroxy;
+mod parser;
+mod scanner;
+mod token;
 mod vm;
 
 fn main() {
@@ -22,26 +22,18 @@ fn main() {
         cli::Commands::Run {
             source,
             file,
-            brainfuck,
             compiled,
         } => {
             if compiled && !file {
                 panic!("use '--file' flag when running compiled chunk.");
-            } else if compiled && brainfuck {
-                panic!("'--brainfuck' not supported with '--compiled'.");
             }
 
-            match get_chunk(source, file, brainfuck, compiled) {
+            match get_chunk(source, file, compiled) {
                 Ok(chunk) => run(chunk),
                 Err(error) => panic!("{error}"),
             }
         }
-        cli::Commands::Compile {
-            source,
-            file,
-            brainfuck,
-            out,
-        } => {
+        cli::Commands::Compile { source, file, out } => {
             if !file && out.is_none() {
                 println!("'--out' must be used when using raw program code.");
                 return;
@@ -49,7 +41,7 @@ fn main() {
 
             let program = get_program(source.clone(), file);
 
-            let chunk = match parse(program, brainfuck) {
+            let chunk = match parse(program) {
                 Ok(chunk) => chunk,
                 Err(_) => return,
             };
@@ -74,12 +66,7 @@ fn main() {
     }
 }
 
-fn get_chunk(
-    source: String,
-    file: bool,
-    brainfuck: bool,
-    compiled: bool,
-) -> Result<Chunk, &'static str> {
+fn get_chunk(source: String, file: bool, compiled: bool) -> Result<Chunk, &'static str> {
     if compiled {
         let bytes = fs::read(source).expect("Unable to read file.");
 
@@ -89,7 +76,7 @@ fn get_chunk(
         }
     } else {
         let program = get_program(source, file);
-        parse(program, brainfuck)
+        parse(program)
     }
 }
 
@@ -101,15 +88,11 @@ fn get_program(source: String, file: bool) -> String {
     }
 }
 
-fn parse(program: String, brainfuck: bool) -> Result<Chunk, &'static str> {
+fn parse(program: String) -> Result<Chunk, &'static str> {
     let mut chunk = Chunk::new();
-    let success = if brainfuck {
-        let scanner = BfScanner::new(program.as_str());
-        BfParser::new(scanner, &mut chunk).compile()
-    } else {
-        let scanner = PrScanner::new(program.as_str());
-        PrParser::new(scanner, &mut chunk).compile()
-    };
+
+    let scanner = Scanner::new(program.as_str());
+    let success = parser::Parser::new(scanner, &mut chunk).compile();
 
     if success {
         Ok(chunk)

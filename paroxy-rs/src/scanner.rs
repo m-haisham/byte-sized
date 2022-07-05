@@ -1,6 +1,6 @@
-use super::token::{PrToken, PrTokenKind};
+use super::token::{Token, TokenKind};
 
-pub struct PrScanner<'a> {
+pub struct Scanner<'a> {
     source: &'a str,
     chars: Vec<char>,
     start: usize,
@@ -8,7 +8,7 @@ pub struct PrScanner<'a> {
     line: usize,
 }
 
-impl<'a> PrScanner<'a> {
+impl<'a> Scanner<'a> {
     pub fn new(source: &'a str) -> Self {
         Self {
             source,
@@ -19,43 +19,43 @@ impl<'a> PrScanner<'a> {
         }
     }
 
-    pub fn scan_token(&mut self) -> PrToken {
+    pub fn scan_token(&mut self) -> Token {
         self.skip_whitespace();
         self.start = self.current;
 
         if self.is_at_end() {
-            return self.make_token(PrTokenKind::EOF);
+            return self.make_token(TokenKind::EOF);
         }
 
         let c = self.advance();
 
         match c {
-            '{' => self.make_token(PrTokenKind::LeftBrace),
-            '}' => self.make_token(PrTokenKind::RightBrace),
-            '[' => self.make_token(PrTokenKind::LeftBracket),
-            ']' => self.make_token(PrTokenKind::RightBracket),
-            '<' => self.make_token(PrTokenKind::LeftAngle),
-            '>' => self.make_token(PrTokenKind::RightAngle),
-            '.' => self.make_token(PrTokenKind::Dot),
-            ',' => self.make_token(PrTokenKind::Comma),
-            '$' => self.make_token(PrTokenKind::Dollar),
-            '@' => self.make_token(PrTokenKind::At),
-            '#' => self.make_token(PrTokenKind::Hash),
+            '{' => self.make_token(TokenKind::LeftBrace),
+            '}' => self.make_token(TokenKind::RightBrace),
+            '[' => self.make_token(TokenKind::LeftBracket),
+            ']' => self.make_token(TokenKind::RightBracket),
+            '<' => self.make_token(TokenKind::LeftAngle),
+            '>' => self.make_token(TokenKind::RightAngle),
+            '.' => self.make_token(TokenKind::Dot),
+            ',' => self.make_token(TokenKind::Comma),
+            '$' => self.make_token(TokenKind::Dollar),
+            '@' => self.make_token(TokenKind::At),
+            '#' => self.make_token(TokenKind::Hash),
             // ':' => self.make_token(PrTokenKind::Colon),
-            '+' => self.make_token(PrTokenKind::Plus),
-            '-' => self.make_token(PrTokenKind::Minus),
+            '+' => self.make_token(TokenKind::Plus),
+            '-' => self.make_token(TokenKind::Minus),
             n @ ('\'' | '"') => self.string(n),
             n @ _ => {
                 if self.is_digit(n) {
                     return self.integer();
                 }
 
-                return self.make_token(PrTokenKind::Ignore);
+                return self.make_token(TokenKind::Ignore);
             }
         }
     }
 
-    fn string(&mut self, terminator: char) -> PrToken {
+    fn string(&mut self, terminator: char) -> Token {
         while !self.is_at_end() && self.peek() != terminator {
             if self.peek() == '\n' {
                 self.line += 1;
@@ -69,15 +69,15 @@ impl<'a> PrScanner<'a> {
         }
 
         self.advance();
-        self.make_token(PrTokenKind::String)
+        self.make_token(TokenKind::String)
     }
 
-    fn integer(&mut self) -> PrToken {
+    fn integer(&mut self) -> Token {
         while !self.is_at_end() && self.is_digit(self.peek()) {
             self.advance();
         }
 
-        self.make_token(PrTokenKind::Integer)
+        self.make_token(TokenKind::Integer)
     }
 
     fn is_digit(&self, c: char) -> bool {
@@ -97,13 +97,13 @@ impl<'a> PrScanner<'a> {
         self.chars[self.current]
     }
 
-    fn make_token(&self, kind: PrTokenKind) -> PrToken {
+    fn make_token(&self, kind: TokenKind) -> Token {
         let lexeme = &self.source[self.start..self.current];
-        PrToken::new(kind, String::from(lexeme), self.line)
+        Token::new(kind, String::from(lexeme), self.line)
     }
 
-    fn error_token(&self, message: &'static str) -> PrToken {
-        PrToken::new(PrTokenKind::Error, String::from(message), self.line)
+    fn error_token(&self, message: &'static str) -> Token {
+        Token::new(TokenKind::Error, String::from(message), self.line)
     }
 
     fn skip_whitespace(&mut self) {
@@ -130,7 +130,7 @@ mod tests {
 
     #[test]
     fn should_scan_brainxysm() {
-        let mut scanner = PrScanner::new("{30000}\"Hello world!\n\"$");
+        let mut scanner = Scanner::new("{30000}\"Hello world!\n\"$");
         let mut tokens = vec![];
 
         loop {
@@ -138,7 +138,7 @@ mod tests {
             tokens.push(token.kind);
 
             match tokens.last().unwrap() {
-                PrTokenKind::Error | PrTokenKind::EOF => break,
+                TokenKind::Error | TokenKind::EOF => break,
                 _ => (),
             }
         }
@@ -146,12 +146,12 @@ mod tests {
         assert_eq!(
             tokens,
             vec![
-                PrTokenKind::LeftBrace,
-                PrTokenKind::Integer,
-                PrTokenKind::RightBrace,
-                PrTokenKind::String,
-                PrTokenKind::Dollar,
-                PrTokenKind::EOF,
+                TokenKind::LeftBrace,
+                TokenKind::Integer,
+                TokenKind::RightBrace,
+                TokenKind::String,
+                TokenKind::Dollar,
+                TokenKind::EOF,
             ]
         );
     }

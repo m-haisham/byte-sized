@@ -1,13 +1,13 @@
 #[derive(Debug, Clone)]
-pub struct PrToken {
-    pub kind: PrTokenKind,
+pub struct Token {
+    pub kind: TokenKind,
     pub lexeme: String,
     pub line: usize,
 }
 
 #[repr(u8)]
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PrTokenKind {
+pub enum TokenKind {
     // Single character tokens.
     LeftBrace,
     RightBrace,
@@ -34,14 +34,14 @@ pub enum PrTokenKind {
     EOF,
 }
 
-impl PrToken {
-    pub fn new(kind: PrTokenKind, lexeme: String, line: usize) -> Self {
+impl Token {
+    pub fn new(kind: TokenKind, lexeme: String, line: usize) -> Self {
         Self { kind, lexeme, line }
     }
 
     pub fn empty() -> Self {
         Self {
-            kind: PrTokenKind::Error,
+            kind: TokenKind::Error,
             lexeme: String::from(""),
             line: 0,
         }
