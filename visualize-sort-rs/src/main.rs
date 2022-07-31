@@ -13,8 +13,39 @@ use sync::SyncVec;
 #[derive(AppState)]
 struct State {
     sync: SyncVec,
-    update_duration: f32,
-    update_timer: f32,
+    update: Update,
+}
+
+struct Update {
+    paused: bool,
+    duration: f32,
+    timer: f32,
+}
+
+impl Default for Update {
+    fn default() -> Self {
+        Self {
+            paused: false,
+            duration: 0.1,
+            timer: 0.0,
+        }
+    }
+}
+
+impl Update {
+    fn should_update(&mut self, delta: f32) -> bool {
+        if self.paused {
+            return false;
+        }
+
+        if self.timer >= self.duration {
+            self.timer = 0.0;
+            true
+        } else {
+            self.timer += delta;
+            false
+        }
+    }
 }
 
 #[notan_main]
@@ -37,16 +68,13 @@ fn main() -> Result<(), String> {
 fn setup() -> State {
     State {
         sync: SyncVec::new(100, algorithms()[0].clone()),
-        update_duration: 0.1,
-        update_timer: 0.0,
+        update: Update::default(),
     }
 }
 
 fn update(app: &mut App, state: &mut State) {
-    state.update_timer += app.timer.delta_f32();
-    if state.update_timer >= state.update_duration {
-        state.update_timer = 0.0;
-        state.sync.try_apply();
+    if state.update.should_update(app.timer.delta_f32()) {
+        state.sync.next();
     }
 }
 
@@ -54,41 +82,42 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
     let mut draw = gfx.create_draw();
 
     draw.clear(Color::BLACK);
-
-    {
-        let parent_size = gfx.size();
-        let parent_height = parent_size.1 as f32;
-
-        let lookup = state.sync.lookup();
-
-        let bar_width = parent_size.0 as f32 / state.sync.values().len() as f32;
-        for (offset, value) in state.sync.values().iter().enumerate() {
-            let bar_size = (bar_width, value * parent_height);
-
-            let bar_y = parent_height - bar_size.1;
-            let bar_x = bar_size.0 * offset as f32;
-
-            let mut bar = draw.rect((bar_x, bar_y), bar_size);
-
-            if lookup.writes_contains(&offset) {
-                bar.color(Color::RED);
-            } else if lookup.accesses_contains(&offset) {
-                bar.color(Color::GREEN);
-            } else {
-                bar.color(Color::WHITE);
-            }
-        }
-    }
+    draw_bars(&mut draw, gfx, state);
 
     let output = plugins.egui(|ctx| {
-        egui::Window::new("Stats").show(ctx, |ui| draw_egui_ui(ui, app));
+        egui::Window::new("Stats").show(ctx, |ui| draw_egui_ui(ui, app, state));
     });
 
     gfx.render(&draw);
     gfx.render(&output);
 }
 
-fn draw_egui_ui(ui: &mut egui::Ui, app: &mut App) {
+fn draw_bars(draw: &mut Draw, gfx: &mut Graphics, state: &mut State) {
+    let parent_size = gfx.size();
+    let parent_height = parent_size.1 as f32;
+
+    let lookup = state.sync.lookup();
+
+    let bar_width = parent_size.0 as f32 / state.sync.values().len() as f32;
+    for (offset, value) in state.sync.values().iter().enumerate() {
+        let bar_size = (bar_width, value * parent_height);
+
+        let bar_y = parent_height - bar_size.1;
+        let bar_x = bar_size.0 * offset as f32;
+
+        let mut bar = draw.rect((bar_x, bar_y), bar_size);
+
+        if lookup.writes_contains(&offset) {
+            bar.color(Color::RED);
+        } else if lookup.accesses_contains(&offset) {
+            bar.color(Color::RED);
+        } else {
+            bar.color(Color::WHITE);
+        }
+    }
+}
+
+fn draw_egui_ui(ui: &mut egui::Ui, app: &mut App, state: &mut State) {
     egui::Grid::new("stat_grid")
         .num_columns(2)
         .spacing([40.0, 6.0])
@@ -97,9 +126,37 @@ fn draw_egui_ui(ui: &mut egui::Ui, app: &mut App) {
             ui.label(format!("{:.2}", app.timer.fps()));
             ui.end_row();
 
-            // TODO: add fullscreen logic
             ui.label("Fullscreen");
-            ui.checkbox(&mut false, "");
+            {
+                let mut is_fullscreen = app.window().is_fullscreen();
+                if ui.checkbox(&mut is_fullscreen, "").clicked() {
+                    app.window().set_fullscreen(is_fullscreen);
+                };
+            }
+            ui.end_row();
+
+            ui.heading(state.sync.name());
+            ui.end_row();
+
+            ui.label("Accesses");
+            ui.colored_label(Color32::GREEN, format!("{}", state.sync.accesses()));
+            ui.end_row();
+
+            ui.label("Writes");
+            ui.colored_label(Color32::RED, format!("{}", state.sync.writes()));
+            ui.end_row();
+
+            ui.label("Paused");
+            ui.checkbox(&mut state.update.paused, "");
+            ui.end_row();
+
+            ui.label("Speed");
+            ui.add(
+                DragValue::new(&mut state.update.duration)
+                    .speed(0.005)
+                    .max_decimals(3)
+                    .clamp_range(0.0..=1.0),
+            );
             ui.end_row();
         });
 }

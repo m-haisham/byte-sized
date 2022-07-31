@@ -105,7 +105,7 @@ impl SyncVec {
 }
 
 impl SyncVec {
-    pub fn try_apply(&mut self) {
+    pub fn next(&mut self) {
         let handle = match &self.handle {
             Some(handle) => handle,
             None => return,
