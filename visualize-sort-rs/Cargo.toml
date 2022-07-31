@@ -1,5 +1,5 @@
 [package]
-name = "visualize-sort-rs"
+name = "visualize_sort_rs"
 version = "0.1.0"
 edition = "2021"
 
