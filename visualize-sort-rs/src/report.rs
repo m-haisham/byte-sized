@@ -9,6 +9,7 @@ pub trait ReportedIndex<T> {
     fn get(&self, index: usize) -> ReportResult<T>;
     fn set(&mut self, index: usize, value: T) -> ReportResult<()>;
     fn swap(&mut self, index1: usize, index2: usize) -> ReportResult<()>;
+    fn len(&self) -> usize;
     fn exit(&self) -> ReportResult<()>;
 }
 
@@ -44,6 +45,10 @@ impl ReportedIndex<f32> for ReportVec {
         Ok(())
     }
 
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
+
     fn exit(&self) -> ReportResult<()> {
         self.sender.send(Event::Exit)?;
         Ok(())
@@ -51,13 +56,40 @@ impl ReportedIndex<f32> for ReportVec {
 }
 
 #[cfg(test)]
-mod test {
+impl<T: Copy> ReportedIndex<T> for Vec<T> {
+    fn get(&self, index: usize) -> ReportResult<T> {
+        Ok(self[index])
+    }
+
+    fn set(&mut self, index: usize, value: T) -> ReportResult<()> {
+        self[index] = value;
+        Ok(())
+    }
+
+    fn swap(&mut self, index1: usize, index2: usize) -> ReportResult<()> {
+        let temp = self[index1];
+        self[index1] = self[index2];
+        self[index2] = temp;
+        Ok(())
+    }
+
+    fn len(&self) -> usize {
+        self.len()
+    }
+
+    fn exit(&self) -> ReportResult<()> {
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
     use std::{sync::mpsc, thread};
 
     use super::*;
 
     #[test]
-    fn test_report_get() {
+    fn test_report() {
         let (tx, rx) = mpsc::channel();
         let thread_handle: thread::JoinHandle<Result<(), SendError<Event>>> =
             thread::spawn(move || {
