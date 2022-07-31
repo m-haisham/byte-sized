@@ -1,15 +1,11 @@
-mod scripts;
-
 use notan::draw::*;
 use notan::egui::{self, *};
 use notan::prelude::*;
 use rand::prelude::SliceRandom;
-use scripts::Scripts;
 
 #[derive(AppState)]
 struct State {
     values: Vec<f32>,
-    scripts: Scripts,
     current: usize,
 
     update_duration: f32,
@@ -48,12 +44,8 @@ fn setup(gfx: &mut Graphics) -> State {
     let mut values = vec_uniform!(f32, gfx.size().0);
     values.shuffle(&mut rand::thread_rng());
 
-    let mut scripts = Scripts::new().load_lib();
-    scripts.run_algorithm(values.clone());
-
     State {
         values,
-        scripts,
         current: 0,
 
         update_duration: 0.01,
@@ -66,9 +58,9 @@ fn update(app: &mut App, state: &mut State) {
     if state.update_timer >= state.update_duration {
         state.update_timer = 0.0;
 
-        if state.current < state.scripts.history.len() - 1 {
-            state.current += 1;
-        }
+        // if state.current < state.scripts.history.len() - 1 {
+        //     state.current += 1;
+        // }
     }
 }
 
@@ -77,30 +69,30 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
 
     draw.clear(Color::BLACK);
 
-    {
-        let event = &state.scripts.history[state.current];
+    // {
+    //     let event = &state.scripts.history[state.current];
 
-        let parent_size = gfx.size();
-        let parent_height = parent_size.1 as f32;
+    //     let parent_size = gfx.size();
+    //     let parent_height = parent_size.1 as f32;
 
-        let bar_width = parent_size.0 as f32 / event.snapshot.len() as f32;
-        for (offset, value) in event.snapshot.iter().enumerate() {
-            let bar_size = (bar_width, value * parent_height);
+    //     let bar_width = parent_size.0 as f32 / event.snapshot.len() as f32;
+    //     for (offset, value) in event.snapshot.iter().enumerate() {
+    //         let bar_size = (bar_width, value * parent_height);
 
-            let bar_y = parent_height - bar_size.1;
-            let bar_x = bar_size.0 * offset as f32;
+    //         let bar_y = parent_height - bar_size.1;
+    //         let bar_x = bar_size.0 * offset as f32;
 
-            let mut bar = draw.rect((bar_x, bar_y), bar_size);
+    //         let mut bar = draw.rect((bar_x, bar_y), bar_size);
 
-            if event.writes.contains(&offset) {
-                bar.color(Color::RED);
-            } else if event.accesses.contains(&offset) {
-                bar.color(Color::GREEN);
-            } else {
-                bar.color(Color::WHITE);
-            }
-        }
-    }
+    //         if event.writes.contains(&offset) {
+    //             bar.color(Color::RED);
+    //         } else if event.accesses.contains(&offset) {
+    //             bar.color(Color::GREEN);
+    //         } else {
+    //             bar.color(Color::WHITE);
+    //         }
+    //     }
+    // }
 
     let output = plugins.egui(|ctx| {
         egui::Window::new("Stats").show(ctx, |ui| draw_egui_ui(ui, app));

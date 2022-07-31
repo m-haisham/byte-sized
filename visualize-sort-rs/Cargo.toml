@@ -8,4 +8,3 @@ edition = "2021"
 [dependencies]
 notan = { version = "0.5.1", features = ["egui"] }
 rand = "0.8.5"
-rlua = "0.19.4"
