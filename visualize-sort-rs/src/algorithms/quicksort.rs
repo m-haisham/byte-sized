@@ -2,14 +2,15 @@ use std::sync::mpsc::SendError;
 
 use crate::{algorithm::Algorithm, event::Event, report::ReportedIndex};
 
+#[derive(Clone)]
 pub struct QuickSort;
 
 impl Algorithm for QuickSort {
-    fn name() -> String {
+    fn name(&self) -> String {
         String::from("QuickSort")
     }
 
-    fn sort(source: &mut impl ReportedIndex<f32>) -> Result<(), SendError<Event>> {
+    fn sort(&self, source: &mut impl ReportedIndex<f32>) -> Result<(), SendError<Event>> {
         Self::bootstrap(source, 0, (source.len() - 1) as i32)
     }
 }
@@ -52,17 +53,17 @@ impl QuickSort {
 
 #[cfg(test)]
 mod tests {
+    use crate::report::TestVec;
+
     use super::*;
 
     #[test]
     fn test_sort() -> Result<(), SendError<Event>> {
-        let mut source = vec![6.0, 8.0, 7.0, 4.0, 3.0, 2.0, 1.0, 0.0, 9.0, 5.0];
-        source.len();
-
-        QuickSort::sort(&mut source)?;
+        let mut source = TestVec(vec![6.0, 8.0, 7.0, 4.0, 3.0, 2.0, 1.0, 0.0, 9.0, 5.0]);
+        QuickSort.sort(&mut source)?;
 
         assert_eq!(
-            source,
+            source.0,
             vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
         );
 

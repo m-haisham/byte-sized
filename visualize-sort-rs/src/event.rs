@@ -1,6 +1,8 @@
 #[derive(Debug, PartialEq)]
 pub enum Event {
     Update(UpdateData),
+
+    // FIXME: Remove exit event.
     Exit,
 }
 

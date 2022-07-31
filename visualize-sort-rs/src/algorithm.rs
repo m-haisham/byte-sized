@@ -1,8 +1,8 @@
 use std::sync::mpsc::SendError;
 
-use crate::{report::ReportedIndex, event::Event};
+use crate::{event::Event, report::ReportedIndex};
 
 pub trait Algorithm {
-    fn name() -> String;
-    fn sort(source: &mut impl ReportedIndex<f32>) -> Result<(), SendError<Event>>;
+    fn name(&self) -> String;
+    fn sort(&self, source: &mut impl ReportedIndex<f32>) -> Result<(), SendError<Event>>;
 }

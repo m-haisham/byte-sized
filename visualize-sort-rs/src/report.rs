@@ -1,5 +1,7 @@
 use std::sync::mpsc::{SendError, Sender};
 
+use notan::log::debug;
+
 use crate::event::{Event, UpdateData};
 
 type ReportError = SendError<Event>;
@@ -56,25 +58,26 @@ impl ReportedIndex<f32> for ReportVec {
 }
 
 #[cfg(test)]
-impl<T: Copy> ReportedIndex<T> for Vec<T> {
+pub struct TestVec<T>(pub Vec<T>);
+
+#[cfg(test)]
+impl<T: Copy> ReportedIndex<T> for TestVec<T> {
     fn get(&self, index: usize) -> ReportResult<T> {
-        Ok(self[index])
+        Ok(self.0[index])
     }
 
     fn set(&mut self, index: usize, value: T) -> ReportResult<()> {
-        self[index] = value;
+        self.0[index] = value;
         Ok(())
     }
 
     fn swap(&mut self, index1: usize, index2: usize) -> ReportResult<()> {
-        let temp = self[index1];
-        self[index1] = self[index2];
-        self[index2] = temp;
+        self.0.swap(index1, index2);
         Ok(())
     }
 
     fn len(&self) -> usize {
-        self.len()
+        self.0.len()
     }
 
     fn exit(&self) -> ReportResult<()> {

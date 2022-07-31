@@ -2,17 +2,17 @@ mod algorithm;
 mod algorithms;
 mod event;
 mod report;
+mod sync;
 
+use crate::algorithms::algorithms;
 use notan::draw::*;
 use notan::egui::{self, *};
 use notan::prelude::*;
-use rand::prelude::SliceRandom;
+use sync::SyncVec;
 
 #[derive(AppState)]
 struct State {
-    values: Vec<f32>,
-    current: usize,
-
+    sync: SyncVec,
     update_duration: f32,
     update_timer: f32,
 }
@@ -34,26 +34,10 @@ fn main() -> Result<(), String> {
         .build()
 }
 
-macro_rules! vec_uniform {
-    ($t:ty, $c:expr) => {{
-        let mut output = Vec::<$t>::new();
-        let segment_value = 1.0 / $c as $t;
-        for offset in 0..$c {
-            output.push(segment_value * offset as $t);
-        }
-        output
-    }};
-}
-
-fn setup(gfx: &mut Graphics) -> State {
-    let mut values = vec_uniform!(f32, gfx.size().0);
-    values.shuffle(&mut rand::thread_rng());
-
+fn setup() -> State {
     State {
-        values,
-        current: 0,
-
-        update_duration: 0.01,
+        sync: SyncVec::new(100, algorithms()[0].clone()),
+        update_duration: 0.1,
         update_timer: 0.0,
     }
 }
@@ -62,10 +46,7 @@ fn update(app: &mut App, state: &mut State) {
     state.update_timer += app.timer.delta_f32();
     if state.update_timer >= state.update_duration {
         state.update_timer = 0.0;
-
-        // if state.current < state.scripts.history.len() - 1 {
-        //     state.current += 1;
-        // }
+        state.sync.try_apply();
     }
 }
 
@@ -74,30 +55,30 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
 
     draw.clear(Color::BLACK);
 
-    // {
-    //     let event = &state.scripts.history[state.current];
+    {
+        let parent_size = gfx.size();
+        let parent_height = parent_size.1 as f32;
 
-    //     let parent_size = gfx.size();
-    //     let parent_height = parent_size.1 as f32;
+        let lookup = state.sync.lookup();
 
-    //     let bar_width = parent_size.0 as f32 / event.snapshot.len() as f32;
-    //     for (offset, value) in event.snapshot.iter().enumerate() {
-    //         let bar_size = (bar_width, value * parent_height);
+        let bar_width = parent_size.0 as f32 / state.sync.values().len() as f32;
+        for (offset, value) in state.sync.values().iter().enumerate() {
+            let bar_size = (bar_width, value * parent_height);
 
-    //         let bar_y = parent_height - bar_size.1;
-    //         let bar_x = bar_size.0 * offset as f32;
+            let bar_y = parent_height - bar_size.1;
+            let bar_x = bar_size.0 * offset as f32;
 
-    //         let mut bar = draw.rect((bar_x, bar_y), bar_size);
+            let mut bar = draw.rect((bar_x, bar_y), bar_size);
 
-    //         if event.writes.contains(&offset) {
-    //             bar.color(Color::RED);
-    //         } else if event.accesses.contains(&offset) {
-    //             bar.color(Color::GREEN);
-    //         } else {
-    //             bar.color(Color::WHITE);
-    //         }
-    //     }
-    // }
+            if lookup.writes_contains(&offset) {
+                bar.color(Color::RED);
+            } else if lookup.accesses_contains(&offset) {
+                bar.color(Color::GREEN);
+            } else {
+                bar.color(Color::WHITE);
+            }
+        }
+    }
 
     let output = plugins.egui(|ctx| {
         egui::Window::new("Stats").show(ctx, |ui| draw_egui_ui(ui, app));
