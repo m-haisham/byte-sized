@@ -1,6 +1,7 @@
 mod algorithm;
 mod algorithms;
 mod event;
+mod report;
 
 use notan::draw::*;
 use notan::egui::{self, *};

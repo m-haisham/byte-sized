@@ -1,12 +1,12 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Event {
     Update(UpdateData),
     Exit,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum UpdateData {
-    Get { index: u32 },
-    Set { index: u32, value: f32 },
-    Swap { index1: u32, index2: u32 },
+    Get { index: usize },
+    Set { index: usize, value: f32 },
+    Swap { index1: usize, index2: usize },
 }
