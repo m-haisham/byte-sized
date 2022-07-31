@@ -9,6 +9,11 @@ use scripts::Scripts;
 #[derive(AppState)]
 struct State {
     values: Vec<f32>,
+    scripts: Scripts,
+    current: usize,
+
+    update_duration: f32,
+    update_timer: f32,
 }
 
 #[notan_main]
@@ -23,6 +28,7 @@ fn main() -> Result<(), String> {
         .add_config(window_config)
         .add_config(EguiConfig)
         .add_config(DrawConfig)
+        .update(update)
         .draw(draw)
         .build()
 }
@@ -39,13 +45,31 @@ macro_rules! vec_uniform {
 }
 
 fn setup(gfx: &mut Graphics) -> State {
-    let mut values = vec_uniform!(f32, 10);
+    let mut values = vec_uniform!(f32, gfx.size().0);
     values.shuffle(&mut rand::thread_rng());
 
-    let scripts = Scripts::new().load_lib();
+    let mut scripts = Scripts::new().load_lib();
     scripts.run_algorithm(values.clone());
 
-    State { values }
+    State {
+        values,
+        scripts,
+        current: 0,
+
+        update_duration: 0.01,
+        update_timer: 0.0,
+    }
+}
+
+fn update(app: &mut App, state: &mut State) {
+    state.update_timer += app.timer.delta_f32();
+    if state.update_timer >= state.update_duration {
+        state.update_timer = 0.0;
+
+        if state.current < state.scripts.history.len() - 1 {
+            state.current += 1;
+        }
+    }
 }
 
 fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut State) {
@@ -54,17 +78,27 @@ fn draw(app: &mut App, gfx: &mut Graphics, plugins: &mut Plugins, state: &mut St
     draw.clear(Color::BLACK);
 
     {
+        let event = &state.scripts.history[state.current];
+
         let parent_size = gfx.size();
         let parent_height = parent_size.1 as f32;
 
-        let bar_width = parent_size.0 as f32 / state.values.len() as f32;
-        for (offset, value) in state.values.iter().enumerate() {
+        let bar_width = parent_size.0 as f32 / event.snapshot.len() as f32;
+        for (offset, value) in event.snapshot.iter().enumerate() {
             let bar_size = (bar_width, value * parent_height);
 
             let bar_y = parent_height - bar_size.1;
             let bar_x = bar_size.0 * offset as f32;
 
-            draw.rect((bar_x, bar_y), bar_size).color(Color::WHITE);
+            let mut bar = draw.rect((bar_x, bar_y), bar_size);
+
+            if event.writes.contains(&offset) {
+                bar.color(Color::RED);
+            } else if event.accesses.contains(&offset) {
+                bar.color(Color::GREEN);
+            } else {
+                bar.color(Color::WHITE);
+            }
         }
     }
 

@@ -1,14 +1,25 @@
-use std::fs;
+use std::{collections::VecDeque, fs};
 
 use rlua::{Function, Lua, Table, Value};
 
 pub struct Scripts {
     pub lua: Lua,
+    pub history: Vec<HistoryEvent>,
+}
+
+#[derive(Debug)]
+pub struct HistoryEvent {
+    pub snapshot: Vec<f32>,
+    pub accesses: Vec<usize>,
+    pub writes: Vec<usize>,
 }
 
 impl Scripts {
     pub fn new() -> Self {
-        Self { lua: Lua::new() }
+        Self {
+            lua: Lua::new(),
+            history: Vec::new(),
+        }
     }
 
     pub fn load_lib(self) -> Self {
@@ -19,7 +30,9 @@ impl Scripts {
         self
     }
 
-    pub fn run_algorithm(&self, values: Vec<f32>) {
+    pub fn run_algorithm(&mut self, values: Vec<f32>) {
+        self.history.clear();
+
         self.lua.context(|lua_ctx| {
             let sequence_table = lua_ctx.create_table().unwrap();
             sequence_table.set("inner", values).unwrap();
@@ -30,10 +43,26 @@ impl Scripts {
             let globals = lua_ctx.globals();
 
             let execute: Function = globals.get("execute").unwrap();
-            if let Err(e) = execute.call::<_, ()>(("quicksort", sequence_table)) {
-                println!("{}", e);
-                panic!();
+            let history = match execute.call::<_, (Vec<Table>,)>(("quicksort", sequence_table)) {
+                Err(e) => {
+                    println!("{}", e);
+                    panic!();
+                }
+                Ok(value) => value.0,
             };
+
+            self.history
+                .extend(history.into_iter().map(Self::parse_event));
+
+            // println!("{:?}", self.history);
         });
+    }
+
+    fn parse_event(table: Table) -> HistoryEvent {
+        HistoryEvent {
+            snapshot: table.get("snapshot").unwrap(),
+            accesses: table.get("accesses").unwrap(),
+            writes: table.get("writes").unwrap(),
+        }
     }
 }

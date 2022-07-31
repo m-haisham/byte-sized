@@ -4,6 +4,12 @@ algorithms = {
 }
 
 function execute(algorithm_name, values)
+    -- Initial
+    array.snapshot(values, {}, {});
+
     algorithms[algorithm_name].sort(values)
-    print(values)
+
+    -- Clear accesses and writes
+    array.snapshot(values, {}, {});
+    return values.history
 end
