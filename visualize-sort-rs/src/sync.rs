@@ -1,7 +1,6 @@
 use std::{
     sync::mpsc::{self, Receiver, SendError, TryRecvError},
     thread::{self, JoinHandle},
-    time::Duration,
 };
 
 use notan::log::debug;

@@ -1,8 +1,5 @@
-use std::sync::mpsc::{SendError, Sender};
-
-use notan::log::debug;
-
 use crate::event::{Event, UpdateData};
+use std::sync::mpsc::{SendError, Sender};
 
 type ReportError = SendError<Event>;
 type ReportResult<T> = Result<T, ReportError>;
