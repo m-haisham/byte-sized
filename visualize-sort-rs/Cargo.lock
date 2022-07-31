@@ -2110,6 +2110,7 @@ name = "visualize-sort-rs"
 version = "0.1.0"
 dependencies = [
  "notan",
+ "rand",
  "rlua",
 ]
 
