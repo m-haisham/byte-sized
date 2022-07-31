@@ -25,7 +25,7 @@ struct Update {
 impl Default for Update {
     fn default() -> Self {
         Self {
-            paused: false,
+            paused: true,
             duration: 0.1,
             timer: 0.0,
         }
