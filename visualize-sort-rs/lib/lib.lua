@@ -3,6 +3,7 @@ algorithms = {
     quicksort = require("scripts.quicksort"),
 }
 
+---@diagnostic disable-next-line: lowercase-global
 function execute(algorithm_name, values)
     -- Initial
     array.snapshot(values, {}, {});

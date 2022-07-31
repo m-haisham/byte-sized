@@ -24,7 +24,7 @@ impl Scripts {
 
     pub fn load_lib(self) -> Self {
         self.lua.context(|lua_ctx| {
-            let lib = fs::read_to_string("scripts/lib.lua").unwrap();
+            let lib = fs::read_to_string("lib/lib.lua").unwrap();
             lua_ctx.load(&lib).exec().unwrap();
         });
         self
