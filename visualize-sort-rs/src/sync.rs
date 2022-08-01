@@ -101,10 +101,7 @@ impl SyncVec {
     }
 
     pub fn done(&self) -> bool {
-        match self.event.as_ref() {
-            Ok(event) => matches!(event, Event::Done),
-            Err(_) => true,
-        }
+        self.handle.is_none()
     }
 }
 
@@ -153,6 +150,8 @@ impl SyncVec {
         if let Err(_) = result {
             self.event = Err(String::from("Error receiving data"));
         }
+
+        debug!("{} thread closed.", self.name());
     }
 }
 
