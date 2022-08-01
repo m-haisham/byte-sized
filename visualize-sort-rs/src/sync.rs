@@ -15,13 +15,14 @@ use crate::{
 
 type SyncHandle = JoinHandle<Result<(), SendError<Event>>>;
 
+#[derive(Debug)]
 pub struct SyncVec {
     name: String,
 
     pub count: usize,
     pub index: usize,
 
-    vec: Vec<f32>,
+    values: Vec<f32>,
     event: Result<Event, String>,
 
     accesses: u32,
@@ -44,19 +45,19 @@ macro_rules! vec_uniform {
 }
 
 impl SyncVec {
-    pub fn new(count: usize, algorithm: usize) -> Self {
-        let name = algorithms()[algorithm].name().clone();
+    pub fn new(count: usize, index: usize) -> Self {
+        let name = algorithms()[index].name().clone();
 
-        let mut vec = vec_uniform!(f32, count);
-        vec.shuffle(&mut rand::thread_rng());
+        let mut values = vec_uniform!(f32, count);
+        values.shuffle(&mut rand::thread_rng());
 
         Self {
             name,
 
             count,
-            index: algorithm,
+            index,
 
-            vec,
+            values,
             event: Ok(Event::Start),
 
             accesses: 0,
@@ -71,7 +72,7 @@ impl SyncVec {
     fn setup_thread(&self) -> (Receiver<Event>, SyncHandle) {
         let (tx, rx) = mpsc::channel();
 
-        let values = self.vec.clone();
+        let values = self.values.clone();
         let algorithm = algorithms()[self.index].clone();
 
         let handle = thread::spawn(move || {
@@ -96,7 +97,7 @@ impl SyncVec {
     }
 
     pub fn values(&self) -> &[f32] {
-        self.vec.as_ref()
+        self.values.as_ref()
     }
 
     pub fn accesses(&self) -> u32 {
@@ -136,11 +137,11 @@ impl SyncVec {
         match &event {
             Event::Get { index: _ } => self.accesses += 1,
             Event::Set { index, value } => {
-                self.vec[*index] = *value;
+                self.values[*index] = *value;
                 self.writes += 1;
             }
             Event::Swap { index1, index2 } => {
-                self.vec.swap(*index1, *index2);
+                self.values.swap(*index1, *index2);
                 self.accesses += 2;
                 self.writes += 2;
             }

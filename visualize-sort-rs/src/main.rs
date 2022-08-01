@@ -16,9 +16,14 @@ const DURATION_SPEED: f32 = 0.05;
 const DURATION_MIN: f32 = 0.0;
 const DURATION_MAX: f32 = 1.0;
 
+const BARS_SPEED: f32 = 10.0;
+const BARS_MAX: f32 = 1000.0;
+const BARS_MIN: f32 = 10.0;
+
 #[derive(AppState)]
 struct State {
     sync: SyncVec,
+    count: usize,
     update: Update,
 }
 
@@ -72,10 +77,12 @@ fn main() -> Result<(), String> {
 }
 
 fn setup() -> State {
+    let count = 100;
     let current = 0;
 
     State {
-        sync: SyncVec::new(100, current),
+        sync: SyncVec::new(count, current),
+        count,
         update: Update::default(),
     }
 }
@@ -100,6 +107,11 @@ fn update(app: &mut App, state: &mut State) {
         state.update.duration = state.update.duration
             + ((duration_delta as f32) * DURATION_SPEED * app.timer.delta_f32());
         state.update.duration = state.update.duration.clamp(DURATION_MIN, DURATION_MAX);
+    }
+
+    if state.count != state.sync.count {
+        state.update.paused = true;
+        state.sync = SyncVec::new(state.count, state.sync.index);
     }
 
     if !state.sync.done() && state.update.should_update(app.timer.delta_f32()) {
@@ -164,10 +176,7 @@ fn draw_egui_ui(ui: &mut egui::Ui, app: &mut App, state: &mut State) {
             }
             ui.end_row();
 
-            draw_setup_ui(ui, state);
-
-            ui.strong(state.sync.name());
-            ui.end_row();
+            draw_setup_ui(ui, app, state);
 
             ui.label("Accesses");
             ui.colored_label(Color32::GREEN, format!("{}", state.sync.accesses()));
@@ -185,6 +194,7 @@ fn draw_egui_ui(ui: &mut egui::Ui, app: &mut App, state: &mut State) {
             ui.add(
                 DragValue::new(&mut state.update.duration)
                     .speed(DURATION_SPEED * app.timer.delta_f32())
+                    .min_decimals(2)
                     .max_decimals(3)
                     .clamp_range(DURATION_MIN..=DURATION_MAX),
             );
@@ -192,7 +202,15 @@ fn draw_egui_ui(ui: &mut egui::Ui, app: &mut App, state: &mut State) {
         });
 }
 
-fn draw_setup_ui(ui: &mut egui::Ui, state: &mut State) {
+fn draw_setup_ui(ui: &mut egui::Ui, app: &mut App, state: &mut State) {
+    ui.label("Count");
+    ui.add(
+        DragValue::new(&mut state.count)
+            .speed(BARS_SPEED * app.timer.delta_f32())
+            .clamp_range(BARS_MIN..=BARS_MAX),
+    );
+    ui.end_row();
+
     ui.label("Algorithm");
     ComboBox::from_label("")
         .selected_text(state.sync.name())
@@ -202,7 +220,7 @@ fn draw_setup_ui(ui: &mut egui::Ui, state: &mut State) {
                 if ui.selectable_label(current, algorithm.name()).clicked() {
                     if !current {
                         SyncVec::new(100, i);
-                        state.update = Default::default();
+                        state.update.paused = true;
                         debug!("Switched to {}", algorithm.name());
                     }
                 };
