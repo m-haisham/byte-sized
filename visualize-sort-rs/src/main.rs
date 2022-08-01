@@ -95,7 +95,7 @@ fn update(app: &mut App, state: &mut State) {
         state.update.paused = !state.update.paused;
     }
 
-    if app.keyboard.was_pressed(KeyCode::F) {
+    if app.keyboard.was_pressed(KeyCode::F) || app.keyboard.was_pressed(KeyCode::F11) {
         let is_fullscreen = app.window().is_fullscreen();
         app.window().set_fullscreen(!is_fullscreen)
     }
