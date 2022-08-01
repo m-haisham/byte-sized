@@ -10,6 +10,10 @@ use notan::egui::{self, *};
 use notan::prelude::*;
 use sync::SyncVec;
 
+const DURATION_SPEED: f32 = 0.05;
+const DURATION_MIN: f32 = 0.0;
+const DURATION_MAX: f32 = 1.0;
+
 #[derive(AppState)]
 struct State {
     sync: SyncVec,
@@ -26,7 +30,7 @@ impl Default for Update {
     fn default() -> Self {
         Self {
             paused: true,
-            duration: 0.1,
+            duration: 0.0,
             timer: 0.0,
         }
     }
@@ -73,7 +77,24 @@ fn setup() -> State {
 }
 
 fn update(app: &mut App, state: &mut State) {
-    if state.update.should_update(app.timer.delta_f32()) {
+    if app.keyboard.was_pressed(KeyCode::Space) {
+        state.update.paused = !state.update.paused;
+    }
+
+    if app.keyboard.was_pressed(KeyCode::F) {
+        let is_fullscreen = app.window().is_fullscreen();
+        app.window().set_fullscreen(!is_fullscreen)
+    }
+
+    {
+        let duration_delta = app.keyboard.is_down(KeyCode::Right) as i32
+            - app.keyboard.is_down(KeyCode::Left) as i32;
+        state.update.duration = state.update.duration
+            + ((duration_delta as f32) * DURATION_SPEED * app.timer.delta_f32());
+        state.update.duration = state.update.duration.clamp(DURATION_MIN, DURATION_MAX);
+    }
+
+    if !state.sync.done() && state.update.should_update(app.timer.delta_f32()) {
         state.sync.next();
     }
 }
@@ -153,9 +174,9 @@ fn draw_egui_ui(ui: &mut egui::Ui, app: &mut App, state: &mut State) {
             ui.label("Speed");
             ui.add(
                 DragValue::new(&mut state.update.duration)
-                    .speed(0.005)
+                    .speed(DURATION_SPEED * app.timer.delta_f32())
                     .max_decimals(3)
-                    .clamp_range(0.0..=1.0),
+                    .clamp_range(DURATION_MIN..=DURATION_MAX),
             );
             ui.end_row();
         });
