@@ -198,13 +198,13 @@ fn draw_setup_ui(ui: &mut egui::Ui, state: &mut State) {
         .selected_text(state.sync.name())
         .show_ui(ui, |ui| {
             for (i, algorithm) in algorithms().iter().enumerate() {
-                if ui
-                    .selectable_label(i == state.sync.index, algorithm.name())
-                    .clicked()
-                {
-                    SyncVec::new(100, i);
-                    state.update = Default::default();
-                    debug!("Switched to {}", algorithm.name());
+                let current = i == state.sync.index;
+                if ui.selectable_label(current, algorithm.name()).clicked() {
+                    if !current {
+                        SyncVec::new(100, i);
+                        state.update = Default::default();
+                        debug!("Switched to {}", algorithm.name());
+                    }
                 };
             }
         });
