@@ -8,6 +8,7 @@ use rand::prelude::SliceRandom;
 
 use crate::{
     algorithm::Algorithm,
+    algorithms::algorithms,
     event::Event,
     report::{ReportVec, ReportedIndex},
 };
@@ -17,6 +18,9 @@ type SyncHandle = JoinHandle<Result<(), SendError<Event>>>;
 pub struct SyncVec {
     name: String,
 
+    pub count: usize,
+    pub index: usize,
+
     vec: Vec<f32>,
     event: Result<Event, String>,
 
@@ -25,6 +29,7 @@ pub struct SyncVec {
 
     rx: Receiver<Event>,
     handle: Option<SyncHandle>,
+    done: bool,
 }
 
 macro_rules! vec_uniform {
@@ -39,11 +44,8 @@ macro_rules! vec_uniform {
 }
 
 impl SyncVec {
-    pub fn new<A>(count: usize, algorithm: A) -> Self
-    where
-        A: Algorithm + Send + 'static,
-    {
-        let name = algorithm.name().clone();
+    pub fn new(count: usize, algorithm: usize) -> Self {
+        let name = algorithms()[algorithm].name().clone();
 
         let mut vec = vec_uniform!(f32, count);
         vec.shuffle(&mut rand::thread_rng());
@@ -52,6 +54,10 @@ impl SyncVec {
 
         Self {
             name,
+
+            count,
+            index: algorithm,
+
             vec,
             event: Ok(Event::Start),
 
@@ -60,21 +66,19 @@ impl SyncVec {
 
             rx,
             handle: Some(handle),
+            done: false,
         }
     }
 
-    fn setup_thread<A>(vec: Vec<f32>, algorithm: A) -> (Receiver<Event>, SyncHandle)
-    where
-        A: Algorithm + Send + 'static,
-    {
+    fn setup_thread(vec: Vec<f32>, algorithm: usize) -> (Receiver<Event>, SyncHandle) {
         let (tx, rx) = mpsc::channel();
 
         let handle = thread::spawn(move || {
             let mut report = ReportVec::new(tx, vec);
-            algorithm.sort(&mut report)?;
+            algorithms()[algorithm].sort(&mut report)?;
 
             report.send(Event::Done)?;
-            debug!("Sorting by {} completed.", algorithm.name());
+            debug!("Sorting by {} completed.", algorithms()[algorithm].name());
 
             Ok(())
         });
@@ -85,7 +89,7 @@ impl SyncVec {
 
 impl SyncVec {
     pub fn name(&self) -> &str {
-        self.name.as_ref()
+        self.name.as_str()
     }
 
     pub fn values(&self) -> &[f32] {
@@ -101,7 +105,7 @@ impl SyncVec {
     }
 
     pub fn done(&self) -> bool {
-        self.handle.is_none()
+        self.done
     }
 }
 
@@ -151,6 +155,7 @@ impl SyncVec {
             self.event = Err(String::from("Error receiving data"));
         }
 
+        self.done = true;
         debug!("{} thread closed.", self.name());
     }
 }

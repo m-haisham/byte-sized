@@ -4,6 +4,6 @@ use self::quicksort::QuickSort;
 
 mod quicksort;
 
-pub fn algorithms() -> [impl Algorithm + Clone; 1] {
-    [QuickSort]
+pub fn algorithms() -> &'static [impl Algorithm + Clone; 1] {
+    &[QuickSort]
 }

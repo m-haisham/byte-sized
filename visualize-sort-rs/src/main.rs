@@ -19,7 +19,6 @@ const DURATION_MAX: f32 = 1.0;
 #[derive(AppState)]
 struct State {
     sync: SyncVec,
-    current: usize,
     update: Update,
 }
 
@@ -76,8 +75,7 @@ fn setup() -> State {
     let current = 0;
 
     State {
-        sync: SyncVec::new(100, algorithms()[current].clone()),
-        current,
+        sync: SyncVec::new(100, current),
         update: Update::default(),
     }
 }
@@ -195,20 +193,16 @@ fn draw_egui_ui(ui: &mut egui::Ui, app: &mut App, state: &mut State) {
 }
 
 fn draw_setup_ui(ui: &mut egui::Ui, state: &mut State) {
-    ui.strong("Setup");
-    ui.end_row();
-
     ui.label("Algorithm");
     ComboBox::from_label("")
-        .selected_text(algorithms()[state.current].name())
+        .selected_text(state.sync.name())
         .show_ui(ui, |ui| {
             for (i, algorithm) in algorithms().iter().enumerate() {
                 if ui
-                    .selectable_label(i == state.current, algorithm.name())
+                    .selectable_label(i == state.sync.index, algorithm.name())
                     .clicked()
                 {
-                    SyncVec::new(100, algorithms()[i].clone());
-                    state.current = i;
+                    SyncVec::new(100, i);
                     state.update = Default::default();
                     debug!("Switched to {}", algorithm.name());
                 };
