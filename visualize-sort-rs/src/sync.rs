@@ -27,7 +27,7 @@ pub struct SyncVec {
     accesses: u32,
     writes: u32,
 
-    rx: Receiver<Event>,
+    rx: Option<Receiver<Event>>,
     handle: Option<SyncHandle>,
     done: bool,
 }
@@ -50,8 +50,6 @@ impl SyncVec {
         let mut vec = vec_uniform!(f32, count);
         vec.shuffle(&mut rand::thread_rng());
 
-        let (rx, handle) = Self::setup_thread(vec.clone(), algorithm);
-
         Self {
             name,
 
@@ -64,21 +62,26 @@ impl SyncVec {
             accesses: 0,
             writes: 0,
 
-            rx,
-            handle: Some(handle),
+            rx: None,
+            handle: None,
             done: false,
         }
     }
 
-    fn setup_thread(vec: Vec<f32>, algorithm: usize) -> (Receiver<Event>, SyncHandle) {
+    fn setup_thread(&self) -> (Receiver<Event>, SyncHandle) {
         let (tx, rx) = mpsc::channel();
 
-        let handle = thread::spawn(move || {
-            let mut report = ReportVec::new(tx, vec);
-            algorithms()[algorithm].sort(&mut report)?;
+        let values = self.vec.clone();
+        let algorithm = algorithms()[self.index].clone();
 
+        let handle = thread::spawn(move || {
+            debug!("Sorting by {}", algorithm.name());
+
+            let mut report = ReportVec::new(tx, values);
+            algorithm.sort(&mut report)?;
             report.send(Event::Done)?;
-            debug!("Sorting by {} completed.", algorithms()[algorithm].name());
+
+            debug!("Sorting by {} completed.", algorithm.name());
 
             Ok(())
         });
@@ -111,7 +114,17 @@ impl SyncVec {
 
 impl SyncVec {
     pub fn next(&mut self) {
-        let event = match self.rx.try_recv() {
+        let rx = match self.rx.as_ref() {
+            Some(rx) => rx,
+            None => {
+                let (rx, handle) = self.setup_thread();
+                self.rx = Some(rx);
+                self.handle = Some(handle);
+                self.rx.as_ref().unwrap()
+            }
+        };
+
+        let event = match rx.try_recv() {
             Ok(e) => e,
             Err(TryRecvError::Empty) => return,
             Err(TryRecvError::Disconnected) => {
