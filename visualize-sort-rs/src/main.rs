@@ -5,8 +5,10 @@ mod report;
 mod sync;
 
 use crate::algorithms::algorithms;
+use algorithm::Algorithm;
 use notan::draw::*;
 use notan::egui::{self, *};
+use notan::log::debug;
 use notan::prelude::*;
 use sync::SyncVec;
 
@@ -17,6 +19,7 @@ const DURATION_MAX: f32 = 1.0;
 #[derive(AppState)]
 struct State {
     sync: SyncVec,
+    current: usize,
     update: Update,
 }
 
@@ -70,13 +73,20 @@ fn main() -> Result<(), String> {
 }
 
 fn setup() -> State {
+    let current = 0;
+
     State {
-        sync: SyncVec::new(100, algorithms()[0].clone()),
+        sync: SyncVec::new(100, algorithms()[current].clone()),
+        current,
         update: Update::default(),
     }
 }
 
 fn update(app: &mut App, state: &mut State) {
+    if app.keyboard.was_pressed(KeyCode::Escape) {
+        app.exit();
+    }
+
     if app.keyboard.was_pressed(KeyCode::Space) {
         state.update.paused = !state.update.paused;
     }
@@ -156,7 +166,9 @@ fn draw_egui_ui(ui: &mut egui::Ui, app: &mut App, state: &mut State) {
             }
             ui.end_row();
 
-            ui.heading(state.sync.name());
+            draw_setup_ui(ui, state);
+
+            ui.strong(state.sync.name());
             ui.end_row();
 
             ui.label("Accesses");
@@ -180,4 +192,27 @@ fn draw_egui_ui(ui: &mut egui::Ui, app: &mut App, state: &mut State) {
             );
             ui.end_row();
         });
+}
+
+fn draw_setup_ui(ui: &mut egui::Ui, state: &mut State) {
+    ui.strong("Setup");
+    ui.end_row();
+
+    ui.label("Algorithm");
+    ComboBox::from_label("")
+        .selected_text(algorithms()[state.current].name())
+        .show_ui(ui, |ui| {
+            for (i, algorithm) in algorithms().iter().enumerate() {
+                if ui
+                    .selectable_label(i == state.current, algorithm.name())
+                    .clicked()
+                {
+                    SyncVec::new(100, algorithms()[i].clone());
+                    state.current = i;
+                    state.update = Default::default();
+                    debug!("Switched to {}", algorithm.name());
+                };
+            }
+        });
+    ui.end_row();
 }
