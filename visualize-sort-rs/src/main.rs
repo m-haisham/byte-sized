@@ -151,7 +151,7 @@ fn draw_bars(draw: &mut Draw, gfx: &mut Graphics, state: &mut State) {
         if lookup.writes_contains(&offset) {
             bar.color(Color::RED);
         } else if lookup.accesses_contains(&offset) {
-            bar.color(Color::RED);
+            bar.color(Color::GREEN);
         } else {
             bar.color(Color::WHITE);
         }
@@ -203,7 +203,7 @@ fn draw_egui_ui(ui: &mut egui::Ui, app: &mut App, state: &mut State) {
 }
 
 fn draw_setup_ui(ui: &mut egui::Ui, app: &mut App, state: &mut State) {
-    ui.label("Count");
+    ui.label("Bars");
     ui.add(
         DragValue::new(&mut state.count)
             .speed(BARS_SPEED * app.timer.delta_f32())

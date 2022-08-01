@@ -16,11 +16,11 @@ impl Algorithm for InsertionSort {
             let mut j = (index as i32) - 1;
 
             while j > -1 && key < source.get(j as usize)? {
-                source.set((j as usize) + 1, source.get(j as usize)?)?;
+                source.set((j + 1) as usize, source.get(j as usize)?)?;
                 j -= 1;
             }
 
-            source.set((j as usize) + 1, key)?;
+            source.set((j + 1) as usize, key)?;
         }
 
         Ok(())
