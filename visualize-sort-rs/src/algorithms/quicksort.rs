@@ -46,7 +46,7 @@ impl QuickSort {
 
 #[cfg(test)]
 mod tests {
-    use std::{sync::mpsc, thread};
+    use std::sync::mpsc;
 
     use super::*;
 

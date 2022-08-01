@@ -4,7 +4,7 @@ mod emit;
 mod event;
 mod sync;
 
-use crate::algorithms::algorithms;
+use algorithms::ALGORITHMS;
 use notan::draw::*;
 use notan::egui::{self, *};
 use notan::log::debug;
@@ -214,7 +214,7 @@ fn draw_setup_ui(ui: &mut egui::Ui, app: &mut App, state: &mut State) {
     ComboBox::from_label("")
         .selected_text(state.sync.name())
         .show_ui(ui, |ui| {
-            for (i, algorithm) in algorithms().iter().enumerate() {
+            for (i, algorithm) in ALGORITHMS.iter().enumerate() {
                 let current = i == state.sync.index;
                 if ui.selectable_label(current, algorithm.name()).clicked() {
                     if !current {

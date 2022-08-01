@@ -6,7 +6,7 @@ use std::{
 use notan::log::debug;
 use rand::prelude::SliceRandom;
 
-use crate::{algorithms::algorithms, emit::EmitVec, event::Event};
+use crate::{algorithms, emit::EmitVec, event::Event};
 
 type SyncHandle = JoinHandle<Result<(), SendError<Event>>>;
 
@@ -41,7 +41,7 @@ macro_rules! vec_uniform {
 
 impl SyncVec {
     pub fn new(count: usize, index: usize) -> Self {
-        let name = algorithms()[index].name().clone();
+        let name = algorithms::ALGORITHMS[index].name().clone();
 
         let mut values = vec_uniform!(f32, count);
         values.shuffle(&mut rand::thread_rng());
@@ -71,7 +71,7 @@ impl SyncVec {
         let index = self.index;
 
         let handle = thread::spawn(move || {
-            let algorithm = &algorithms()[index];
+            let algorithm = &algorithms::ALGORITHMS[index];
 
             debug!("Sorting by {}", algorithm.name());
 
