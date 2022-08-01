@@ -6,12 +6,7 @@ use std::{
 use notan::log::debug;
 use rand::prelude::SliceRandom;
 
-use crate::{
-    algorithm::Algorithm,
-    algorithms::algorithms,
-    event::Event,
-    report::{ReportVec, ReportedIndex},
-};
+use crate::{algorithms::algorithms, emit::EmitVec, event::Event};
 
 type SyncHandle = JoinHandle<Result<(), SendError<Event>>>;
 
@@ -72,15 +67,17 @@ impl SyncVec {
     fn setup_thread(&self) -> (Receiver<Event>, SyncHandle) {
         let (tx, rx) = mpsc::channel();
 
-        let values = self.values.clone();
-        let algorithm = algorithms()[self.index].clone();
+        let mut values = self.values.clone();
+        let index = self.index;
 
         let handle = thread::spawn(move || {
+            let algorithm = &algorithms()[index];
+
             debug!("Sorting by {}", algorithm.name());
 
-            let mut report = ReportVec::new(tx, values);
-            algorithm.sort(&mut report)?;
-            report.send(Event::Done)?;
+            let mut vec = EmitVec::new(&tx, &mut values, 0);
+            algorithm.sort(&mut vec)?;
+            tx.send(Event::Done)?;
 
             debug!("Sorting by {} completed.", algorithm.name());
 
@@ -140,8 +137,8 @@ impl SyncVec {
                 self.values[*index] = *value;
                 self.writes += 1;
             }
-            Event::Swap { index1, index2 } => {
-                self.values.swap(*index1, *index2);
+            Event::Swap { a, b } => {
+                self.values.swap(*a, *b);
                 self.accesses += 2;
                 self.writes += 2;
             }
@@ -196,9 +193,9 @@ impl SyncVec {
                 accesses: None,
                 writes: Some(vec![*index]),
             },
-            Event::Swap { index1, index2 } => AccessLookup {
+            Event::Swap { a, b } => AccessLookup {
                 accesses: None,
-                writes: Some(vec![*index1, *index2]),
+                writes: Some(vec![*a, *b]),
             },
             Event::Start | Event::Done => AccessLookup::default(),
         }

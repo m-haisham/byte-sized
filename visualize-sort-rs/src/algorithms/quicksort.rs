@@ -1,6 +1,7 @@
-use std::sync::mpsc::SendError;
-
-use crate::{algorithm::Algorithm, event::Event, report::ReportedIndex};
+use crate::{
+    algorithm::Algorithm,
+    emit::{EmitResult, EmitVec},
+};
 
 #[derive(Clone)]
 pub struct QuickSort;
@@ -10,17 +11,13 @@ impl Algorithm for QuickSort {
         String::from("QuickSort")
     }
 
-    fn sort(&self, source: &mut impl ReportedIndex<f32>) -> Result<(), SendError<Event>> {
+    fn sort(&self, source: &mut EmitVec) -> EmitResult<()> {
         Self::bootstrap(source, 0, (source.len() - 1) as i32)
     }
 }
 
 impl QuickSort {
-    fn bootstrap(
-        source: &mut impl ReportedIndex<f32>,
-        low: i32,
-        high: i32,
-    ) -> Result<(), SendError<Event>> {
+    fn bootstrap(source: &mut EmitVec, low: i32, high: i32) -> EmitResult<()> {
         if low < high {
             let pivot = Self::partition(source, low, high)?;
 
@@ -31,11 +28,7 @@ impl QuickSort {
         Ok(())
     }
 
-    fn partition(
-        source: &mut impl ReportedIndex<f32>,
-        low: i32,
-        high: i32,
-    ) -> Result<i32, SendError<Event>> {
+    fn partition(source: &mut EmitVec, low: i32, high: i32) -> EmitResult<i32> {
         let pivot = source.get(high as usize)?;
         let mut i = low - 1;
 
@@ -53,20 +46,20 @@ impl QuickSort {
 
 #[cfg(test)]
 mod tests {
-    use crate::report::TestVec;
+    use std::{sync::mpsc, thread};
 
     use super::*;
 
     #[test]
-    fn test_sort() -> Result<(), SendError<Event>> {
-        let mut source = TestVec(vec![6.0, 8.0, 7.0, 4.0, 3.0, 2.0, 1.0, 0.0, 9.0, 5.0]);
-        QuickSort.sort(&mut source)?;
+    fn test_sort() -> EmitResult<()> {
+        let (tx, _rx) = mpsc::channel();
 
-        assert_eq!(
-            source.0,
-            vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
-        );
+        let mut array = [6.0, 8.0, 7.0, 4.0, 3.0, 2.0, 1.0, 0.0, 9.0, 5.0];
+        let mut vec = EmitVec::new(&tx, &mut array, 0);
 
+        QuickSort.sort(&mut vec)?;
+
+        assert_eq!(&array, &[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]);
         Ok(())
     }
 }

@@ -1,11 +1,10 @@
 mod algorithm;
 mod algorithms;
+mod emit;
 mod event;
-mod report;
 mod sync;
 
 use crate::algorithms::algorithms;
-use algorithm::Algorithm;
 use notan::draw::*;
 use notan::egui::{self, *};
 use notan::log::debug;
@@ -219,7 +218,7 @@ fn draw_setup_ui(ui: &mut egui::Ui, app: &mut App, state: &mut State) {
                 let current = i == state.sync.index;
                 if ui.selectable_label(current, algorithm.name()).clicked() {
                     if !current {
-                        SyncVec::new(100, i);
+                        state.sync = SyncVec::new(100, i);
                         state.update.paused = true;
                         debug!("Switched to {}", algorithm.name());
                     }

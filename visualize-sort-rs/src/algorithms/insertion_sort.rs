@@ -1,6 +1,7 @@
-use std::sync::mpsc::SendError;
-
-use crate::{algorithm::Algorithm, event::Event, report::ReportedIndex};
+use crate::{
+    algorithm::Algorithm,
+    emit::{EmitResult, EmitVec},
+};
 
 #[derive(Clone)]
 pub struct InsertionSort;
@@ -10,7 +11,7 @@ impl Algorithm for InsertionSort {
         String::from("InsertionSort")
     }
 
-    fn sort(&self, source: &mut impl ReportedIndex<f32>) -> Result<(), SendError<Event>> {
+    fn sort(&self, source: &mut EmitVec) -> EmitResult<()> {
         for index in 0..source.len() {
             let key = source.get(index)?;
             let mut j = (index as i32) - 1;
@@ -29,19 +30,19 @@ impl Algorithm for InsertionSort {
 
 #[cfg(test)]
 mod tests {
-    use crate::report::TestVec;
+    use std::sync::mpsc;
 
     use super::*;
 
     #[test]
-    fn test_sort() -> Result<(), SendError<Event>> {
-        let mut source = TestVec(vec![6.0, 8.0, 7.0, 4.0, 3.0, 2.0, 1.0, 0.0, 9.0, 5.0]);
-        InsertionSort.sort(&mut source)?;
+    fn test_sort() -> EmitResult<()> {
+        let (tx, _rx) = mpsc::channel();
+        let mut array = [6.0, 8.0, 7.0, 4.0, 3.0, 2.0, 1.0, 0.0, 9.0, 5.0];
+        let mut vec = EmitVec::new(&tx, &mut array, 0);
 
-        assert_eq!(
-            source.0,
-            vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
-        );
+        InsertionSort.sort(&mut vec)?;
+
+        assert_eq!(&array, &[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]);
 
         Ok(())
     }
