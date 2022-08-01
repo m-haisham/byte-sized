@@ -1,15 +1,15 @@
-use crate::event::{Event, UpdateData};
+use crate::event::Event;
 use std::sync::mpsc::{SendError, Sender};
 
 type ReportError = SendError<Event>;
 type ReportResult<T> = Result<T, ReportError>;
 
 pub trait ReportedIndex<T> {
+    fn send(&self, event: Event) -> ReportResult<()>;
     fn get(&self, index: usize) -> ReportResult<T>;
     fn set(&mut self, index: usize, value: T) -> ReportResult<()>;
     fn swap(&mut self, index1: usize, index2: usize) -> ReportResult<()>;
     fn len(&self) -> usize;
-    fn exit(&self) -> ReportResult<()>;
 }
 
 pub struct ReportVec {
@@ -24,33 +24,30 @@ impl ReportVec {
 }
 
 impl ReportedIndex<f32> for ReportVec {
+    fn send(&self, event: Event) -> ReportResult<()> {
+        self.sender.send(event)
+    }
+
     fn get(&self, index: usize) -> ReportResult<f32> {
         let temp = self.inner[index];
-        self.sender.send(Event::Update(UpdateData::Get { index }))?;
+        self.sender.send(Event::Get { index })?;
         Ok(temp)
     }
 
     fn set(&mut self, index: usize, value: f32) -> ReportResult<()> {
         self.inner[index] = value;
-        self.sender
-            .send(Event::Update(UpdateData::Set { index, value }))?;
+        self.sender.send(Event::Set { index, value })?;
         Ok(())
     }
 
     fn swap(&mut self, index1: usize, index2: usize) -> ReportResult<()> {
         self.inner.swap(index1, index2);
-        self.sender
-            .send(Event::Update(UpdateData::Swap { index1, index2 }))?;
+        self.sender.send(Event::Swap { index1, index2 })?;
         Ok(())
     }
 
     fn len(&self) -> usize {
         self.inner.len()
-    }
-
-    fn exit(&self) -> ReportResult<()> {
-        self.sender.send(Event::Exit)?;
-        Ok(())
     }
 }
 
@@ -59,6 +56,10 @@ pub struct TestVec<T>(pub Vec<T>);
 
 #[cfg(test)]
 impl<T: Copy> ReportedIndex<T> for TestVec<T> {
+    fn send(&self, _: Event) -> ReportResult<()> {
+        Ok(())
+    }
+
     fn get(&self, index: usize) -> ReportResult<T> {
         Ok(self.0[index])
     }
@@ -75,10 +76,6 @@ impl<T: Copy> ReportedIndex<T> for TestVec<T> {
 
     fn len(&self) -> usize {
         self.0.len()
-    }
-
-    fn exit(&self) -> ReportResult<()> {
-        Ok(())
     }
 }
 
@@ -98,7 +95,6 @@ pub mod tests {
                 report.get(0)?;
                 report.set(0, 1.0)?;
                 report.swap(0, 1)?;
-                report.exit()?;
 
                 Ok(())
             });
@@ -112,16 +108,15 @@ pub mod tests {
         assert_eq!(
             events,
             vec![
-                Event::Update(UpdateData::Get { index: 0 }),
-                Event::Update(UpdateData::Set {
+                Event::Get { index: 0 },
+                Event::Set {
                     index: 0,
                     value: 1.0
-                }),
-                Event::Update(UpdateData::Swap {
+                },
+                Event::Swap {
                     index1: 0,
                     index2: 1,
-                }),
-                Event::Exit
+                },
             ]
         );
     }

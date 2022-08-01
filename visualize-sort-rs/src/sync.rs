@@ -8,24 +8,22 @@ use rand::prelude::SliceRandom;
 
 use crate::{
     algorithm::Algorithm,
-    event::{Event, UpdateData},
-    report::ReportVec,
+    event::Event,
+    report::{ReportVec, ReportedIndex},
 };
 
-pub struct SyncHandle {
-    pub rx: Receiver<Event>,
-    pub th: JoinHandle<Result<(), SendError<Event>>>,
-}
+type SyncHandle = JoinHandle<Result<(), SendError<Event>>>;
 
 pub struct SyncVec {
     name: String,
 
     vec: Vec<f32>,
-    update: Option<UpdateData>,
+    event: Result<Event, String>,
 
     accesses: u32,
     writes: u32,
 
+    rx: Receiver<Event>,
     handle: Option<SyncHandle>,
 }
 
@@ -50,38 +48,38 @@ impl SyncVec {
         let mut vec = vec_uniform!(f32, count);
         vec.shuffle(&mut rand::thread_rng());
 
-        let handle = Self::setup_thread(vec.clone(), algorithm);
+        let (rx, handle) = Self::setup_thread(vec.clone(), algorithm);
 
         Self {
             name,
             vec,
-            update: None,
+            event: Ok(Event::Start),
 
             accesses: 0,
             writes: 0,
 
+            rx,
             handle: Some(handle),
         }
     }
 
-    fn setup_thread<A>(vec: Vec<f32>, algorithm: A) -> SyncHandle
+    fn setup_thread<A>(vec: Vec<f32>, algorithm: A) -> (Receiver<Event>, SyncHandle)
     where
         A: Algorithm + Send + 'static,
     {
         let (tx, rx) = mpsc::channel();
 
-        let th = thread::spawn(move || {
+        let handle = thread::spawn(move || {
             let mut report = ReportVec::new(tx, vec);
+            algorithm.sort(&mut report)?;
 
-            // FIXME: remove unwrap
-            algorithm.sort(&mut report).unwrap();
-
+            report.send(Event::Done)?;
             debug!("Sorting by {} completed.", algorithm.name());
 
             Ok(())
         });
 
-        SyncHandle { rx, th }
+        (rx, handle)
     }
 }
 
@@ -101,49 +99,60 @@ impl SyncVec {
     pub fn writes(&self) -> u32 {
         self.writes
     }
+
+    pub fn done(&self) -> bool {
+        match self.event.as_ref() {
+            Ok(event) => matches!(event, Event::Done),
+            Err(_) => true,
+        }
+    }
 }
 
 impl SyncVec {
     pub fn next(&mut self) {
-        let handle = match &self.handle {
-            Some(handle) => handle,
-            None => return,
-        };
-
-        let event = match handle.rx.try_recv() {
+        let event = match self.rx.try_recv() {
             Ok(e) => e,
-            Err(TryRecvError::Disconnected) => {
-                // TODO: Handle disconnet.
-                return;
-            }
             Err(TryRecvError::Empty) => return,
-        };
-
-        let update = match event {
-            Event::Update(data) => data,
-            Event::Exit => {
-                let handle = self.handle.take().unwrap();
-
-                // FIXME: Handle thread join and output
-                handle.th.join().expect("unable to join thread.").unwrap();
+            Err(TryRecvError::Disconnected) => {
+                self.disconnected();
                 return;
             }
         };
 
-        match &update {
-            UpdateData::Get { index: _ } => self.accesses += 1,
-            UpdateData::Set { index, value } => {
+        match &event {
+            Event::Get { index: _ } => self.accesses += 1,
+            Event::Set { index, value } => {
                 self.vec[*index] = *value;
                 self.writes += 1;
             }
-            UpdateData::Swap { index1, index2 } => {
+            Event::Swap { index1, index2 } => {
                 self.vec.swap(*index1, *index2);
                 self.accesses += 2;
                 self.writes += 2;
             }
+            Event::Start | Event::Done => (),
         };
 
-        self.update = Some(update);
+        self.event = Ok(event);
+    }
+
+    fn disconnected(&mut self) {
+        let handle = match self.handle.take() {
+            Some(handle) => handle,
+            None => return,
+        };
+
+        let result = match handle.join() {
+            Ok(r) => r,
+            Err(_) => {
+                self.event = Err(String::from("Error closing disconnected thread."));
+                return;
+            }
+        };
+
+        if let Err(_) = result {
+            self.event = Err(String::from("Error receiving data"));
+        }
     }
 }
 
@@ -155,24 +164,25 @@ pub struct AccessLookup {
 
 impl SyncVec {
     pub fn lookup(&self) -> AccessLookup {
-        let data = match self.update.as_ref() {
-            Some(data) => data,
-            None => return AccessLookup::default(),
+        let data = match self.event.as_ref() {
+            Ok(data) => data,
+            Err(_) => return AccessLookup::default(),
         };
 
         match data {
-            UpdateData::Get { index } => AccessLookup {
+            Event::Get { index } => AccessLookup {
                 accesses: Some(vec![*index]),
                 writes: None,
             },
-            UpdateData::Set { index, value: _ } => AccessLookup {
+            Event::Set { index, value: _ } => AccessLookup {
                 accesses: None,
                 writes: Some(vec![*index]),
             },
-            UpdateData::Swap { index1, index2 } => AccessLookup {
+            Event::Swap { index1, index2 } => AccessLookup {
                 accesses: None,
                 writes: Some(vec![*index1, *index2]),
             },
+            Event::Start | Event::Done => AccessLookup::default(),
         }
     }
 }
