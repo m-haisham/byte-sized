@@ -75,7 +75,7 @@ impl SyncVec {
 
             debug!("Sorting by {}", algorithm.name());
 
-            let mut vec = EmitVec::new(&tx, &mut values, 0);
+            let mut vec = EmitVec::borrow(&tx, &mut values, 0);
             algorithm.sort(&mut vec)?;
             tx.send(Event::Done)?;
 

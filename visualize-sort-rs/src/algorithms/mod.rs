@@ -8,7 +8,7 @@ mod merge_sort;
 mod quicksort;
 
 lazy_static! {
-    pub static ref ALGORITHMS: [Box<dyn Algorithm>; 2] = [
+    pub static ref ALGORITHMS: [Box<dyn Algorithm>; 3] = [
         Box::new(QuickSort),
         Box::new(InsertionSort),
         Box::new(MergeSort),
