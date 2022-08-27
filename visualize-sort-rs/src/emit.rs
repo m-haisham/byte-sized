@@ -1,4 +1,4 @@
-use crate::event::Event;
+use crate::event::{Event, EventKind};
 use std::{
     ops::{Deref, DerefMut, Range},
     sync::mpsc::{SendError, Sender},
@@ -10,30 +10,45 @@ pub struct EmitVec<'a> {
     pub tx: EmitSender<'a>,
     pub array: EmitArray<'a>,
     pub offset: usize,
+    pub highlight: bool,
 }
 
 impl<'a> EmitVec<'a> {
-    #[inline(always)]
+    #[inline]
     pub fn borrow(tx: &'a Sender<Event>, array: &'a mut [f32], offset: usize) -> Self {
         Self {
             tx: EmitSender::Borrowed(tx),
             array: EmitArray::Borrowed(array),
             offset,
+            highlight: true,
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn new(tx: Sender<Event>, array: Vec<f32>, offset: usize) -> Self {
         Self {
             tx: EmitSender::Owned(tx),
             array: EmitArray::Owned(array),
             offset,
+            highlight: true,
         }
+    }
+
+    #[inline]
+    pub fn set_highlight(&mut self, value: bool) {
+        self.highlight = value;
+    }
+
+    pub fn send(&self, kind: EventKind) -> EmitResult<()> {
+        self.tx.send(Event {
+            highlight: self.highlight,
+            kind,
+        })
     }
 
     pub fn get(&self, index: usize) -> EmitResult<f32> {
         let value = self.array[index];
-        self.tx.send(Event::Get {
+        self.send(EventKind::Get {
             index: index + self.offset,
         })?;
         Ok(value)
@@ -41,7 +56,7 @@ impl<'a> EmitVec<'a> {
 
     pub fn set(&mut self, index: usize, value: f32) -> EmitResult<()> {
         self.array[index] = value;
-        self.tx.send(Event::Set {
+        self.send(EventKind::Set {
             index: index + self.offset,
             value,
         })?;
@@ -50,7 +65,7 @@ impl<'a> EmitVec<'a> {
 
     pub fn swap(&mut self, a: usize, b: usize) -> EmitResult<()> {
         self.array.swap(a, b);
-        self.tx.send(Event::Swap {
+        self.send(EventKind::Swap {
             a: a + self.offset,
             b: b + self.offset,
         })?;
@@ -147,15 +162,24 @@ pub mod tests {
             .expect("The thread panicked.")
             .expect("Failed to send event.");
 
+        macro_rules! event {
+            ($kind:expr) => {
+                Event {
+                    highlight: true,
+                    kind: $kind,
+                }
+            };
+        }
+
         assert_eq!(
             events,
             vec![
-                Event::Get { index: 0 },
-                Event::Set {
+                event!(EventKind::Get { index: 0 }),
+                event!(EventKind::Set {
                     index: 0,
                     value: 1.0
-                },
-                Event::Swap { a: 0, b: 1 },
+                }),
+                event!(EventKind::Swap { a: 0, b: 1 }),
             ]
         );
     }

@@ -27,6 +27,9 @@ impl MergeSort {
             self.boostrap(&mut left)?;
             self.boostrap(&mut right)?;
 
+            left.set_highlight(false);
+            right.set_highlight(false);
+
             let (mut i, mut j, mut k) = (0, 0, 0);
 
             while i < left.len() && j < right.len() {

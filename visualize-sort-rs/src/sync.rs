@@ -6,7 +6,11 @@ use std::{
 use notan::log::debug;
 use rand::prelude::SliceRandom;
 
-use crate::{algorithms, emit::EmitVec, event::Event};
+use crate::{
+    algorithms,
+    emit::EmitVec,
+    event::{Event, EventKind},
+};
 
 type SyncHandle = JoinHandle<Result<(), SendError<Event>>>;
 
@@ -53,7 +57,7 @@ impl SyncVec {
             index,
 
             values,
-            event: Ok(Event::Start),
+            event: Ok(Event::START),
 
             accesses: 0,
             writes: 0,
@@ -77,7 +81,7 @@ impl SyncVec {
 
             let mut vec = EmitVec::borrow(&tx, &mut values, 0);
             algorithm.sort(&mut vec)?;
-            tx.send(Event::Done)?;
+            tx.send(Event::DONE)?;
 
             debug!("Sorting by {} completed.", algorithm.name());
 
@@ -131,18 +135,18 @@ impl SyncVec {
             }
         };
 
-        match &event {
-            Event::Get { index: _ } => self.accesses += 1,
-            Event::Set { index, value } => {
+        match &event.kind {
+            EventKind::Get { index: _ } => self.accesses += 1,
+            EventKind::Set { index, value } => {
                 self.values[*index] = *value;
                 self.writes += 1;
             }
-            Event::Swap { a, b } => {
+            EventKind::Swap { a, b } => {
                 self.values.swap(*a, *b);
                 self.accesses += 2;
                 self.writes += 2;
             }
-            Event::Start | Event::Done => (),
+            EventKind::Start | EventKind::Done => (),
         };
 
         self.event = Ok(event);
@@ -179,25 +183,26 @@ pub struct AccessLookup {
 
 impl SyncVec {
     pub fn lookup(&self) -> AccessLookup {
-        let data = match self.event.as_ref() {
-            Ok(data) => data,
+        let event = match self.event.as_ref() {
             Err(_) => return AccessLookup::default(),
+            Ok(event) if !event.highlight => return AccessLookup::default(),
+            Ok(event) => event,
         };
 
-        match data {
-            Event::Get { index } => AccessLookup {
+        match &event.kind {
+            EventKind::Get { index } => AccessLookup {
                 accesses: Some(vec![*index]),
                 writes: None,
             },
-            Event::Set { index, value: _ } => AccessLookup {
+            EventKind::Set { index, value: _ } => AccessLookup {
                 accesses: None,
                 writes: Some(vec![*index]),
             },
-            Event::Swap { a, b } => AccessLookup {
+            EventKind::Swap { a, b } => AccessLookup {
                 accesses: None,
                 writes: Some(vec![*a, *b]),
             },
-            Event::Start | Event::Done => AccessLookup::default(),
+            EventKind::Start | EventKind::Done => AccessLookup::default(),
         }
     }
 }
