@@ -1,3 +1,5 @@
+mod compiler;
+
 use std::io::stdin;
 
 const TAPE_LENGTH: usize = 30000;
@@ -76,14 +78,5 @@ impl BrainFuck {
 
             i += 1;
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
     }
 }
