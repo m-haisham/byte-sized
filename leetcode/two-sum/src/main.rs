@@ -10,45 +10,38 @@
 //!
 //! https://leetcode.com/problems/two-sum/
 
-use std::{collections::HashMap, env, error, process::exit};
+use std::{collections::HashMap, env, error, num::ParseIntError, process::exit, str::FromStr};
 
-use indoc::indoc;
+use clap::{arg, command, value_parser};
 
-const USAGE: &'static str = indoc! {"
-    Usage: two_sum <nums:int> <target:int>
+#[derive(Clone)]
+struct Nums(Vec<i32>);
 
-    <nums>   = Array of integers
-    <target> = Integer target
+impl FromStr for Nums {
+    type Err = ParseIntError;
 
-    Example: two_sum 2,7,11,15 9
-"};
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let inner = s
+            .split(",")
+            .map(|v| v.trim().parse())
+            .collect::<Result<_, _>>()?;
+        Ok(Nums(inner))
+    }
+}
 
 fn main() -> Result<(), Box<dyn error::Error>> {
-    let mut args = env::args();
-    args.next();
+    let matches = command!()
+        .arg(arg!([nums] "Array of integers to search on").value_parser(value_parser!(Nums)))
+        .arg(arg!([target] "The target sum").value_parser(value_parser!(i32)))
+        .get_matches();
 
-    let nums = match args.next() {
-        Some(values) => values
-            .split(",")
-            .map(|value| value.parse())
-            .collect::<Result<_, _>>()?,
-        None => show_usage_and_quit(),
-    };
+    let Some(Nums(nums)) = matches.get_one::<Nums>("nums") else { exit(0) };
+    let Some(target) = matches.get_one::<i32>("target") else { exit(0) };
 
-    let target = match args.next() {
-        Some(value) => value.parse()?,
-        None => show_usage_and_quit(),
-    };
-
-    let result = two_sum(nums, target);
+    let result = two_sum(nums.clone(), *target);
     println!("{result:?}");
 
     Ok(())
-}
-
-fn show_usage_and_quit() -> ! {
-    println!("{USAGE}");
-    exit(0);
 }
 
 fn two_sum(nums: Vec<i32>, target: i32) -> Vec<i32> {
